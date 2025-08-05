@@ -1,4 +1,6 @@
-import {Corpus, type CorpusOptions} from "./Corpus";
+import { Corpus, type CorpusOptions } from "./Corpus";
+import { get } from 'svelte/store';
+import { materials } from '../stores/materials';
 
 export class DrawerCabinet extends Corpus{
     drawers?: number;
@@ -10,13 +12,12 @@ export class DrawerCabinet extends Corpus{
         w: number,
         h: number,
         d: number,
-        t: number,
         drawers: number,
         heights: number[],
         clearance: number,
-        options?:CorpusOptions,
+        options?: CorpusOptions,
     ) {
-        super(id, w, h, d, t,'drawer',options);
+        super(id, w, h, d, 'drawer', options);
         this.drawers = drawers;
         this.heights = heights;
         this.clearance = clearance;
@@ -37,9 +38,11 @@ export class DrawerCabinet extends Corpus{
         if(this.drawers === undefined || this.heights === undefined) {
             return data;
         }
+        const { corpus, back } = get(materials);
+        const t = corpus.thickness;
         const usableHeight = this.h - ((this.drawers + 1) * 2);
-        const drawerWidth = this.w - 2 * this.t;
-        const drawerDepth = this.d - this.t;
+        const drawerWidth = this.w - 2 * t;
+        const drawerDepth = this.d - back.thickness;
         const clr = this.clearance || 0;
         let cumulativeY = 2;
         for (let i = 0; i < this.drawers; i++) {

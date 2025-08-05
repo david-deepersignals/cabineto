@@ -1,6 +1,7 @@
 <script lang="ts">
   import Form from "./components/Form.svelte";
   import MaterialForm from "./components/MaterialForm.svelte";
+  import LayoutSummary from "./components/LayoutSummary.svelte";
   import { cabinets } from './stores/cabinets';
 
   const downloadCSV = () => {
@@ -23,6 +24,7 @@
   };
   let showForm = false;
   let showMaterialForm = false;
+  let showSummary = false;
 
 
   const toggleForm = () => {
@@ -50,8 +52,8 @@
     console.log(event);
     dragInfo.isDragging = true;
     dragInfo.targetId = cabinetId;
-    dragInfo.offsetX =  event.clientX - (event.x - rect.width);
-    dragInfo.offsetY = event.clientY - (rect.y - rect.height);
+    dragInfo.offsetX = event.clientX - rect.left;
+    dragInfo.offsetY = event.clientY - rect.top;
   }
 
   function handleDrag(event: MouseEvent) {
@@ -89,8 +91,8 @@
       const rect1 = {
         x: finalLeft,
         y: finalTop,
-        w: draggedCabinet.w || 100, // Default width/height if not provided
-        h: draggedCabinet.h || 100
+        w: draggedCabinet.w / 3 || 100, // Default width/height if not provided
+        h: draggedCabinet.h / 3 || 100
       };
 
       let collision = false;
@@ -103,8 +105,8 @@
         const rect2 = {
           x: otherCabinet.x ?? 0,
           y: otherCabinet.y ?? 0,
-          w: otherCabinet.w || 100,
-          h: otherCabinet.h || 100
+          w: otherCabinet.w / 3 || 100,
+          h: otherCabinet.h / 3|| 100
         };
 
         if (
@@ -207,46 +209,52 @@
 <div class="h-full">
   <h2 class="text-xl font-bold mb-4">Visual Cabinet Planner</h2>
 
-  <div class="flex gap-4 mb-4">
-    <button on:click={toggleForm} class="px-4 py-2 bg-blue-600 text-white rounded">
-      {showForm ? 'Close Form' : 'Add Cabinet'}
-    </button>
-    <button on:click={toggleMaterialForm} class="px-4 py-2 bg-purple-600 text-white rounded">
-      {showMaterialForm ? 'Close Materials' : 'Materials'}
-    </button>
-    <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={() => downloadCSV()}>
-      Download CSV
-    </button>
-  </div>
+  {#if showSummary}
+    <LayoutSummary on:close={() => showSummary = false} />
+  {:else}
+    <div class="flex gap-4 mb-4">
+      <button on:click={toggleForm} class="px-4 py-2 bg-blue-600 text-white rounded">
+        {showForm ? 'Close Form' : 'Add Cabinet'}
+      </button>
+      <button on:click={toggleMaterialForm} class="px-4 py-2 bg-purple-600 text-white rounded">
+        {showMaterialForm ? 'Close Materials' : 'Materials'}
+      </button>
+      <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={() => downloadCSV()}>
+        Download CSV
+      </button>
+      <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => showSummary = true}>
+        Layout Summary
+      </button>
+    </div>
 
-  <div id="layout">
-    {#each $cabinets as cabinet,index}
-      <div
-              class="cabinet"
-              role="button"
-              tabindex="{index}"
-              style="left: {cabinet.x}px; top: {cabinet.y}px; width: {cabinet.w}px; height: {cabinet.h}px;"
-              on:mousedown={(e) => startDrag(e, cabinet.id)}
-      >
-        {`Cabinet ${cabinet.id}`}
-        {#if cabinet.type === 'door'}
-          <div style="width: {cabinet.w}px; height: {cabinet.h}px;">
-            🚪 {(cabinet as any).doors} door(s)
-          </div>
-          {/if}
-        {#if cabinet.type === 'drawer'}
-          🗄️ {(cabinet as any).drawers} drawer(s)<br>{(cabinet as any).heights.join("% / ")}
-          {/if}
-      </div>
-    {/each}
+    <div id="layout">
+      {#each $cabinets as cabinet,index}
+        <div
+                class="cabinet"
+                role="button"
+                tabindex="{index}"
+                style="left: {cabinet.x}px; top: {cabinet.y}px; width: {cabinet.w/3}px; height: {cabinet.h/3}px;"
+                on:mousedown={(e) => startDrag(e, cabinet.id)}
+        >
+          {`Cabinet ${cabinet.id}`}
+          {#if cabinet.type === 'door'}
+              🚪 {(cabinet as any).doors} door(s)
+
+            {/if}
+          {#if cabinet.type === 'drawer'}
+            🗄️ {(cabinet as any).drawers} drawer(s)<br>{(cabinet as any).heights.join("% / ")}
+            {/if}
+        </div>
+      {/each}
 
 
-  </div>
+    </div>
 
-  {#if showForm}
-    <Form on:close={() => showForm = false} />
-  {/if}
-  {#if showMaterialForm}
-    <MaterialForm on:close={() => showMaterialForm = false} />
+    {#if showForm}
+      <Form on:close={() => showForm = false} />
+    {/if}
+    {#if showMaterialForm}
+      <MaterialForm on:close={() => showMaterialForm = false} />
+    {/if}
   {/if}
 </div>

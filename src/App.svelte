@@ -1,10 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import Form from "./components/Form.svelte";
-  import {writable} from "svelte/store";
-  import type {DoorCabinet} from "./models/DoorCabinet";
-  import type {MouseEventHandler} from "svelte/elements";
-  import type {Corpus} from "./models/Corpus";
+  import MaterialForm from "./components/MaterialForm.svelte";
+  import { cabinets } from './stores/cabinets';
 
   const downloadCSV = () => {
     let csv = "1. dimension (mm),2. dimension (mm),quantity,edge banding right,edge banding left,edge banding bottom,edge banding top,label,hinge location\n";
@@ -25,28 +22,18 @@
     a.click();
   };
   let showForm = false;
-  const cabinets = writable<Corpus[]>([]);
-
-  let counter = 1;
+  let showMaterialForm = false;
 
 
   const toggleForm = () => {
     showForm = !showForm;
   };
 
-  const addCabinet = (cabinet: CustomEvent) => {
-
-    const cab:Corpus = cabinet.detail;
-    console.log(cab);
-    cabinets.update(prev => [...prev, cab]);
-
-
-    counter++;
-    // Auto-hide form after adding
-    showForm = false;
+  const toggleMaterialForm = () => {
+    showMaterialForm = !showMaterialForm;
   };
 
-  let dragInfo = {
+  let dragInfo: { isDragging: boolean; offsetX: number; offsetY: number; targetId: string | null } = {
     isDragging: false,
     offsetX: 0,
     offsetY: 0,
@@ -96,8 +83,8 @@
       if (index === -1) return current;
 
       const draggedCabinet = current[index];
-      let finalLeft = Math.round(draggedCabinet.x / 10) * 10;
-      let finalTop = Math.round(draggedCabinet.y / 10) * 10;
+      let finalLeft = Math.round(((draggedCabinet.x ?? 0) / 10)) * 10;
+      let finalTop = Math.round(((draggedCabinet.y ?? 0) / 10)) * 10;
 
       const rect1 = {
         x: finalLeft,
@@ -114,8 +101,8 @@
         if (i === index) return;
 
         const rect2 = {
-          x: otherCabinet.x,
-          y: otherCabinet.y,
+          x: otherCabinet.x ?? 0,
+          y: otherCabinet.y ?? 0,
           w: otherCabinet.w || 100,
           h: otherCabinet.h || 100
         };
@@ -128,7 +115,7 @@
         ) {
           collision = true;
 
-          const snapOptions = [
+          const snapOptions: [number, number][] = [
             [rect2.x - rect1.w, rect2.y],         // Snap to left of other
             [rect2.x + rect2.w, rect2.y],         // Snap to right of other
             [rect2.x, rect2.y - rect1.h],         // Snap above other
@@ -146,9 +133,9 @@
             const overlap = current.some((other2, j) => {
               if (j === index || j === i) return false;
 
-              const rect3 = {
-                x: other2.x,
-                y: other2.y,
+            const rect3 = {
+                x: other2.x ?? 0,
+                y: other2.y ?? 0,
                 w: other2.w || 100,
                 h: other2.h || 100
               };
@@ -224,6 +211,9 @@
     <button on:click={toggleForm} class="px-4 py-2 bg-blue-600 text-white rounded">
       {showForm ? 'Close Form' : 'Add Cabinet'}
     </button>
+    <button on:click={toggleMaterialForm} class="px-4 py-2 bg-purple-600 text-white rounded">
+      {showMaterialForm ? 'Close Materials' : 'Materials'}
+    </button>
     <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={() => downloadCSV()}>
       Download CSV
     </button>
@@ -241,11 +231,11 @@
         {`Cabinet ${cabinet.id}`}
         {#if cabinet.type === 'door'}
           <div style="width: {cabinet.w}px; height: {cabinet.h}px;">
-            🚪 {cabinet.doors} door(s)
+            🚪 {(cabinet as any).doors} door(s)
           </div>
           {/if}
         {#if cabinet.type === 'drawer'}
-          🗄️ {cabinet.drawers} drawer(s)<br>{cabinet.heights.join("% / ")}
+          🗄️ {(cabinet as any).drawers} drawer(s)<br>{(cabinet as any).heights.join("% / ")}
           {/if}
       </div>
     {/each}
@@ -254,6 +244,9 @@
   </div>
 
   {#if showForm}
-    <Form counter="{counter}" on:addCabinet={addCabinet} />
+    <Form on:close={() => showForm = false} />
+  {/if}
+  {#if showMaterialForm}
+    <MaterialForm on:close={() => showMaterialForm = false} />
   {/if}
 </div>

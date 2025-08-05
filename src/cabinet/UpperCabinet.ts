@@ -8,10 +8,9 @@ export class UpperCabinet extends Corpus{
         w: number,
         h: number,
         d: number,
-        t: number,
         doors: number,
     ) {
-        super(id, w, h, d, t,'door');
+        super(id, w, h, d, 'door');
         this.doors = doors;
     }
 

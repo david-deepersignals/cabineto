@@ -1,17 +1,15 @@
 <script>
     import { createEventDispatcher } from 'svelte';
-    import {DoorCabinet} from "../models/DoorCabinet.ts";
-    import {DrawerCabinet} from "../models/DrawerCabinet.js";
+    import {DoorCabinet} from "../cabinet/DoorCabinet";
+    import {DrawerCabinet} from "../cabinet/DrawerCabinet";
+    import { cabinets } from '../stores/cabinets';
 
     const dispatch = createEventDispatcher();
-
-    export let counter;
 
 
     let width = '10';
     let height = '10';
     let depth = '10';
-    let thickness = '19';
     let type = 'door';
     let doors = 2;
     let drawers = 3;
@@ -27,14 +25,12 @@
         const w = parseFloat(width);
         const h = parseFloat(height);
         const d = parseFloat(depth);
-        const t = parseFloat(thickness);
-
-        if (!w || !h || !d || !t) {
-            alert('All dimensions (width, height, depth, thickness) must be filled.');
+        if (!w || !h || !d) {
+            alert('All dimensions (width, height, depth) must be filled.');
             return;
         }
 
-        const id = `CAB-${counter}`;
+        const id = `CAB-${$cabinets.length + 1}`;
 
 
         let newCabinet;
@@ -44,7 +40,6 @@
                 w * 10,
                 h * 10,
                 d * 10,
-                t,
                 doors ?? 0,
                 {full:fullCorpus,
                 insetBack:insetBack})
@@ -55,7 +50,6 @@
                 w * 10,
                 h * 10,
                 d * 10,
-                t,
                 drawers,
                 drawerHeights.split(',')
                     .map(s => parseFloat(s.trim()))
@@ -69,7 +63,8 @@
         }
 
         newCabinet.validate()
-        dispatch('addCabinet', newCabinet);
+        cabinets.update(prev => [...prev, newCabinet]);
+        dispatch('close');
     };
 </script>
 
@@ -85,9 +80,6 @@
             </label>
             <label class="block">Depth (cm):
                 <input type="number" bind:value={depth} class="border p-1 w-full" required />
-            </label>
-            <label class="block">Thickness (mm):
-                <input type="number" bind:value={thickness} class="border p-1 w-full" required />
             </label>
             <label class="block">Full Corpus:
             <input type="checkbox" bind:checked={fullCorpus} class="border p-1 w-full" />
@@ -118,7 +110,7 @@
                 </label>
             {/if}
             <div class="flex justify-end gap-2 pt-2">
-                <button class="px-3 py-1 bg-gray-400 text-white rounded" on:click={() => dispatch('cancel')}>Cancel</button>
+                <button class="px-3 py-1 bg-gray-400 text-white rounded" on:click={() => dispatch('close')}>Cancel</button>
                 <button class="px-3 py-1 bg-blue-600 text-white rounded" on:click={addCabinet}>Add</button>
             </div>
         </div>

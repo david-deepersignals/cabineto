@@ -14,6 +14,8 @@ const MARGIN = 40;
 interface Bounds { minX: number; minY: number; width: number; height: number; }
 let bounds: Bounds = { minX: 0, minY: 0, width: 0, height: 0 };
 let sorted: any[] = [];
+interface CabinetRow { y: number; cabinets: any[]; }
+let rows: CabinetRow[] = [];
 
 
 $: bounds = (() => {
@@ -27,6 +29,18 @@ $: bounds = (() => {
 })();
 
 $: sorted = $cabinets.slice().sort((a, b) => (a.x ?? 0) - (b.x ?? 0));
+$: rows = (() => {
+  const map = new Map<number, any[]>();
+  $cabinets.forEach(cab => {
+    const y = Math.round(cab.y ?? 0);
+    const arr = map.get(y) ?? [];
+    arr.push(cab);
+    map.set(y, arr);
+  });
+  return Array.from(map.entries())
+    .map(([y, cabs]) => ({ y, cabinets: cabs.sort((a, b) => (a.x ?? 0) - (b.x ?? 0)) }))
+    .sort((a, b) => a.y - b.y);
+})();
 
 let heightTicks: number[] = [];
 interface HeightSegment { start: number; end: number; mid: number; size: number; }
@@ -114,16 +128,39 @@ function exportCab(id: string) {
     {/each}
 
     <!-- horizontal dimension line for cabinet widths -->
-    <line x1={MARGIN} y1={bounds.height + MARGIN + DIM_OFFSET} x2={bounds.width + MARGIN} y2={bounds.height + MARGIN + DIM_OFFSET} stroke="black" />
-    {#each sorted as cab}
-      {@const x = (cab.x ?? 0) - bounds.minX + MARGIN}
-      {@const w = cab.w / $scale}
-      <line x1={x} y1={bounds.height + MARGIN + DIM_OFFSET - 5} x2={x} y2={bounds.height + MARGIN + DIM_OFFSET + 5} stroke="black" />
-      <line x1={x + w} y1={bounds.height + MARGIN + DIM_OFFSET - 5} x2={x + w} y2={bounds.height + MARGIN + DIM_OFFSET + 5} stroke="black" />
-      <text x={x + w / 2} y={bounds.height + MARGIN + DIM_OFFSET + 15} text-anchor="middle" font-size="12">{Math.round(cab.w)} mm</text>
-
-    {/each}
-    <text x={bounds.width / 2 + MARGIN} y={bounds.height + MARGIN + DIM_OFFSET + 35} text-anchor="middle" font-size="12">Total {totalWidthMm()} mm</text>
+    {#if rows.length <= 1}
+      <line x1={MARGIN} y1={bounds.height + MARGIN + DIM_OFFSET} x2={bounds.width + MARGIN} y2={bounds.height + MARGIN + DIM_OFFSET} stroke="black" />
+      {#each sorted as cab}
+        {@const x = (cab.x ?? 0) - bounds.minX + MARGIN}
+        {@const w = cab.w / $scale}
+        <line x1={x} y1={bounds.height + MARGIN + DIM_OFFSET - 5} x2={x} y2={bounds.height + MARGIN + DIM_OFFSET + 5} stroke="black" />
+        <line x1={x + w} y1={bounds.height + MARGIN + DIM_OFFSET - 5} x2={x + w} y2={bounds.height + MARGIN + DIM_OFFSET + 5} stroke="black" />
+        <text x={x + w / 2} y={bounds.height + MARGIN + DIM_OFFSET + 15} text-anchor="middle" font-size="12">{Math.round(cab.w)} mm</text>
+      {/each}
+      <text x={bounds.width / 2 + MARGIN} y={bounds.height + MARGIN + DIM_OFFSET + 35} text-anchor="middle" font-size="12">Total {totalWidthMm()} mm</text>
+    {:else}
+      {@const topRow = rows[0]}
+      {@const bottomRow = rows[rows.length - 1]}
+      <!-- bottom row dimension line -->
+      <line x1={MARGIN} y1={bounds.height + MARGIN + DIM_OFFSET} x2={bounds.width + MARGIN} y2={bounds.height + MARGIN + DIM_OFFSET} stroke="black" />
+      {#each bottomRow.cabinets as cab}
+        {@const x = (cab.x ?? 0) - bounds.minX + MARGIN}
+        {@const w = cab.w / $scale}
+        <line x1={x} y1={bounds.height + MARGIN + DIM_OFFSET - 5} x2={x} y2={bounds.height + MARGIN + DIM_OFFSET + 5} stroke="black" />
+        <line x1={x + w} y1={bounds.height + MARGIN + DIM_OFFSET - 5} x2={x + w} y2={bounds.height + MARGIN + DIM_OFFSET + 5} stroke="black" />
+        <text x={x + w / 2} y={bounds.height + MARGIN + DIM_OFFSET + 15} text-anchor="middle" font-size="12">{Math.round(cab.w)} mm</text>
+      {/each}
+      <text x={bounds.width / 2 + MARGIN} y={bounds.height + MARGIN + DIM_OFFSET + 35} text-anchor="middle" font-size="12">Total {totalWidthMm()} mm</text>
+      <!-- top row dimension line -->
+      <line x1={MARGIN} y1={MARGIN - DIM_OFFSET} x2={bounds.width + MARGIN} y2={MARGIN - DIM_OFFSET} stroke="black" />
+      {#each topRow.cabinets as cab}
+        {@const x = (cab.x ?? 0) - bounds.minX + MARGIN}
+        {@const w = cab.w / $scale}
+        <line x1={x} y1={MARGIN - DIM_OFFSET - 5} x2={x} y2={MARGIN - DIM_OFFSET + 5} stroke="black" />
+        <line x1={x + w} y1={MARGIN - DIM_OFFSET - 5} x2={x + w} y2={MARGIN - DIM_OFFSET + 5} stroke="black" />
+        <text x={x + w / 2} y={MARGIN - DIM_OFFSET - 10} text-anchor="middle" font-size="12">{Math.round(cab.w)} mm</text>
+      {/each}
+    {/if}
 
     <!-- total height dimension line -->
     <line x1={bounds.width + MARGIN + DIM_OFFSET} y1={MARGIN} x2={bounds.width + MARGIN + DIM_OFFSET} y2={bounds.height + MARGIN} stroke="black" />

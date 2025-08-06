@@ -17,7 +17,7 @@ let sorted: any[] = [];
 
 
 $: bounds = (() => {
-  if ($cabinets.length === 0) return { minX: 0, minY: 0, width: 0, height: 0 };
+  if ($cabinets.length === 0) return { minX: 0, minY: 0, width: 0, height: 0, heights: [] };
   const minX = Math.min(...$cabinets.map(c => c.x ?? 0));
   const minY = Math.min(...$cabinets.map(c => c.y ?? 0));
   const maxX = Math.max(...$cabinets.map(c => (c.x ?? 0) + c.w / SCALE));

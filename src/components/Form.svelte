@@ -2,6 +2,8 @@
     import { createEventDispatcher } from 'svelte';
     import {DoorCabinet} from "../cabinet/DoorCabinet";
     import {DrawerCabinet} from "../cabinet/DrawerCabinet";
+    import {CornerCabinet} from "../cabinet/CornerCabinet";
+    import {OvenCabinet} from "../cabinet/OvenCabinet";
     import { cabinets } from '../stores/cabinets';
 
     const dispatch = createEventDispatcher();
@@ -15,11 +17,14 @@
     let drawers = 3;
     let drawerHeights = '30,30,40';
     let drawerClearance = 12;
+    let fixedSide = '0';
     let fullCorpus = false;
     let insetBack = false;
 
     $: isDrawer = type === 'drawer';
     $: isDoor = type === 'door';
+    $: isCorner = type === 'corner';
+    $: isOven = type === 'oven';
 
     const addCabinet = () => {
         const w = parseFloat(width);
@@ -58,7 +63,30 @@
                 {full:fullCorpus,
                     insetBack:insetBack})
 
-        }else {
+        } else if (type === "corner") {
+            const fs = parseFloat(fixedSide);
+            if (!fs) {
+                alert('Fixed side dimension must be provided.');
+                return;
+            }
+            newCabinet = new CornerCabinet(
+                id,
+                w * 10,
+                h * 10,
+                d * 10,
+                fs * 10,
+                {full:fullCorpus, insetBack:insetBack}
+            );
+        } else if (type === "oven") {
+            newCabinet = new OvenCabinet(
+                id,
+                w * 10,
+                h * 10,
+                d * 10,
+                0,
+                {full:fullCorpus, insetBack:insetBack}
+            );
+        } else {
             return;
         }
 
@@ -91,11 +119,18 @@
                 <select bind:value={type} class="border p-1 w-full">
                     <option value="door">Door</option>
                     <option value="drawer">Drawer</option>
+                    <option value="corner">Corner</option>
+                    <option value="oven">Oven</option>
                 </select>
             </label>
             {#if isDoor}
                 <label class="block">Doors:
                     <input type="number" bind:value={doors} class="border p-1 w-full" />
+                </label>
+            {/if}
+            {#if isCorner}
+                <label class="block">Fixed Side (cm):
+                    <input type="number" bind:value={fixedSide} class="border p-1 w-full" />
                 </label>
             {/if}
             {#if isDrawer}

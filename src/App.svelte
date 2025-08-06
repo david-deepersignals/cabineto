@@ -329,6 +329,12 @@ $: layoutHeight = layoutHeightMm;
             {#if cabinet.type === 'drawer'}
               🗄️ {(cabinet as any).drawers} drawer(s)<br>{(cabinet as any).heights.join("% / ")}
             {/if}
+            {#if cabinet.type === 'corner'}
+              🔻 corner {(cabinet as any).fixedSide}mm fixed
+            {/if}
+            {#if cabinet.type === 'oven'}
+              🔥 oven with drawer
+            {/if}
           </div>
         {/each}
       </div>

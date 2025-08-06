@@ -121,6 +121,13 @@ function exportCab(id: string) {
           <line x1={x} x2={x + w} y1={y + h * pos / 100} y2={y + h * pos / 100} stroke="black" stroke-dasharray="4 2" />
         {/each}
       {/if}
+      {#if cab.type === 'corner' && (cab as any).fixedSide}
+        <line x1={x + (cab as any).fixedSide / $scale} y1={y} x2={x + (cab as any).fixedSide / $scale} y2={y + h} stroke="black" stroke-dasharray="4 2" />
+      {/if}
+
+      {#if cab.type === 'oven' && (cab as any).drawerHeight}
+        <line x1={x} x2={x + w} y1={y + (cab as any).drawerHeight / $scale} y2={y + (cab as any).drawerHeight / $scale} stroke="black" stroke-dasharray="4 2" />
+      {/if}
 
       <text x={x + w / 2} y={y + h / 2} text-anchor="middle" dominant-baseline="middle" font-size="12">{cab.id}</text>
 
@@ -193,6 +200,13 @@ function exportCab(id: string) {
             {@const pos = heights.slice(0, i + 1).reduce((a: number, b: number) => a + b, 0)}
             <line x1="0" x2={cab.w/$scale} y1={(cab.h/$scale) * pos / 100} y2={(cab.h/$scale) * pos / 100} stroke="black" stroke-dasharray="4 2" />
           {/each}
+       {/if}
+        {#if cab.type === 'corner' && (cab as any).fixedSide}
+          <line x1={(cab as any).fixedSide / $scale} y1="0" x2={(cab as any).fixedSide / $scale} y2={cab.h/$scale} stroke="black" stroke-dasharray="4 2" />
+        {/if}
+
+        {#if cab.type === 'oven' && (cab as any).drawerHeight}
+          <line x1="0" x2={cab.w/$scale} y1={(cab as any).drawerHeight / $scale} y2={(cab as any).drawerHeight / $scale} stroke="black" stroke-dasharray="4 2" />
         {/if}
 
         <text x={(cab.w/$scale)/2} y={(cab.h/$scale)/2} text-anchor="middle" dominant-baseline="middle" font-size="12">{cab.id}</text>

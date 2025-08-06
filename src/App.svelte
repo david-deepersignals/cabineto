@@ -4,6 +4,7 @@ import MaterialForm from "./components/MaterialForm.svelte";
 import LayoutSummary from "./components/LayoutSummary.svelte";
 import { cabinets } from './stores/cabinets';
 import { scale } from './stores/scale';
+import type { Corpus } from './cabinet/Corpus';
 
 const GRID_SIZE = 10;
 const layoutWidthMm = 1000;
@@ -34,14 +35,29 @@ $: layoutHeight = layoutHeightMm;
   let showForm = false;
   let showMaterialForm = false;
   let showSummary = false;
+  let editingCabinet: Corpus | null = null;
 
+  const openAddForm = () => {
+    editingCabinet = null;
+    showForm = true;
+  };
 
-  const toggleForm = () => {
-    showForm = !showForm;
+  const openEditForm = (cab: Corpus) => {
+    editingCabinet = cab;
+    showForm = true;
+  };
+
+  const closeForm = () => {
+    showForm = false;
+    editingCabinet = null;
   };
 
   const toggleMaterialForm = () => {
     showMaterialForm = !showMaterialForm;
+  };
+
+  const deleteCabinet = (id: string) => {
+    cabinets.update(cabs => cabs.filter(c => c.id !== id));
   };
 
   const zoomIn = () => scale.update(s => Math.max(0.5, s - 0.5));
@@ -222,6 +238,32 @@ $: layoutHeight = layoutHeightMm;
 
 
 
+  $: depthMismatch = new Set<string>();
+  $: {
+    depthMismatch.clear();
+    const list = $cabinets;
+    for (let i = 0; i < list.length; i++) {
+      const a = list[i];
+      const aw = a.w / $scale;
+      const ah = a.h / $scale;
+      const ax = a.x ?? 0;
+      const ay = a.y ?? 0;
+      for (let j = i + 1; j < list.length; j++) {
+        const b = list[j];
+        const bw = b.w / $scale;
+        const bh = b.h / $scale;
+        const bx = b.x ?? 0;
+        const by = b.y ?? 0;
+        const verticalOverlap = ay < by + bh && by < ay + ah;
+        const touching = Math.abs(ax + aw - bx) < 1 || Math.abs(bx + bw - ax) < 1;
+        if (verticalOverlap && touching && a.d !== b.d) {
+          depthMismatch.add(a.id);
+          depthMismatch.add(b.id);
+        }
+      }
+    }
+  }
+
 </script>
 
 <style>
@@ -246,6 +288,20 @@ $: layoutHeight = layoutHeightMm;
     text-align: center;
     font-size: 10px;
     cursor: move;
+  }
+  .cabinet .controls {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    display: flex;
+    gap: 2px;
+  }
+  .cabinet .controls button {
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 0 2px;
+    font-size: 10px;
+    cursor: pointer;
   }
   .dim-x {
     position: absolute;
@@ -296,8 +352,8 @@ $: layoutHeight = layoutHeightMm;
     <LayoutSummary on:close={() => showSummary = false} />
   {:else}
     <div class="flex gap-4 mb-4">
-      <button on:click={toggleForm} class="px-4 py-2 bg-blue-600 text-white rounded">
-        {showForm ? 'Close Form' : 'Add Cabinet'}
+      <button on:click={openAddForm} class="px-4 py-2 bg-blue-600 text-white rounded">
+        Add Cabinet
       </button>
       <button on:click={toggleMaterialForm} class="px-4 py-2 bg-purple-600 text-white rounded">
         {showMaterialForm ? 'Close Materials' : 'Materials'}
@@ -319,21 +375,26 @@ $: layoutHeight = layoutHeightMm;
             class="cabinet"
             role="button"
             tabindex="{index}"
-            style="left: {cabinet.x}px; top: {cabinet.y}px; width: {cabinet.w/$scale}px; height: {cabinet.h/$scale}px;"
+            style="left: {cabinet.x}px; top: {cabinet.y}px; width: {cabinet.w/$scale}px; height: {cabinet.h/$scale}px; border-color: {depthMismatch.has(cabinet.id) ? 'red' : '#444'};"
             on:mousedown={(e) => startDrag(e, cabinet.id)}
           >
-            {`Cabinet ${cabinet.id}`}
+            <div class="controls">
+              <button on:click|stopPropagation={() => openEditForm(cabinet)}>✎</button>
+              <button on:click|stopPropagation={() => deleteCabinet(cabinet.id)}>✕</button>
+            </div>
+            {`Cabinet ${cabinet.id}`}<br/>
+            W:{cabinet.w} H:{cabinet.h} D:{cabinet.d}
             {#if cabinet.type === 'door'}
-              🚪 {(cabinet as any).doors} door(s)
+              <br/>🚪 {(cabinet as any).doors} door(s)
             {/if}
             {#if cabinet.type === 'drawer'}
-              🗄️ {(cabinet as any).drawers} drawer(s)<br>{(cabinet as any).heights.join("% / ")}
+              <br/>🗄️ {(cabinet as any).drawers} drawer(s)<br>{(cabinet as any).heights.join("% / ")}
             {/if}
             {#if cabinet.type === 'corner'}
-              🔻 corner {(cabinet as any).fixedSide}mm fixed
+              <br/>🔻 corner {(cabinet as any).fixedSide}mm fixed
             {/if}
             {#if cabinet.type === 'oven'}
-              🔥 oven with drawer
+              <br/>🔥 oven with drawer
             {/if}
           </div>
         {/each}
@@ -355,7 +416,7 @@ $: layoutHeight = layoutHeightMm;
     </div>
 
     {#if showForm}
-      <Form on:close={() => showForm = false} />
+      <Form cabinet={editingCabinet} on:close={closeForm} />
     {/if}
     {#if showMaterialForm}
       <MaterialForm on:close={() => showMaterialForm = false} />

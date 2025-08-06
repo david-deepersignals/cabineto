@@ -1,5 +1,6 @@
-<script>
-    import { createEventDispatcher } from 'svelte';
+<script lang="ts">
+    import { createEventDispatcher, onMount } from 'svelte';
+    import type { Corpus } from "../cabinet/Corpus";
     import {DoorCabinet} from "../cabinet/DoorCabinet";
     import {DrawerCabinet} from "../cabinet/DrawerCabinet";
     import {CornerCabinet} from "../cabinet/CornerCabinet";
@@ -8,6 +9,7 @@
 
     const dispatch = createEventDispatcher();
 
+    export let cabinet: Corpus | null = null;
 
     let width = '10';
     let height = '10';
@@ -20,13 +22,39 @@
     let fixedSide = '0';
     let fullCorpus = false;
     let insetBack = false;
+    let x = 0
+    let y = 0
+
+    onMount(() => {
+        if (cabinet) {
+            width = (cabinet.w / 10).toString();
+            height = (cabinet.h / 10).toString();
+            depth = (cabinet.d / 10).toString();
+            x = cabinet.x
+            y = cabinet.y
+            type = cabinet.type ?? 'door';
+            fullCorpus = cabinet.options?.full ?? false;
+            insetBack = cabinet.options?.insetBack ?? false;
+            if (type === 'door') {
+                doors = (cabinet as DoorCabinet).doors ?? doors;
+            }
+            if (type === 'drawer') {
+                drawers = (cabinet as DrawerCabinet).drawers ?? drawers;
+                drawerHeights = (cabinet as DrawerCabinet).heights?.join(',') ?? drawerHeights;
+                drawerClearance = (cabinet as DrawerCabinet).clearance ?? drawerClearance;
+            }
+            if (type === 'corner') {
+                fixedSide = ((cabinet as CornerCabinet).fixedSide / 10).toString();
+            }
+        }
+    });
 
     $: isDrawer = type === 'drawer';
     $: isDoor = type === 'door';
     $: isCorner = type === 'corner';
     $: isOven = type === 'oven';
 
-    const addCabinet = () => {
+    const saveCabinet = () => {
         const w = parseFloat(width);
         const h = parseFloat(height);
         const d = parseFloat(depth);
@@ -35,7 +63,7 @@
             return;
         }
 
-        const id = `CAB-${$cabinets.length + 1}`;
+        const id = cabinet ? cabinet.id : `CAB-${$cabinets.length + 1}`;
 
 
         let newCabinet;
@@ -90,15 +118,21 @@
             return;
         }
 
+        newCabinet.y = y
+        newCabinet.x = x
         newCabinet.validate()
-        cabinets.update(prev => [...prev, newCabinet]);
+        if (cabinet) {
+            cabinets.update(prev => prev.map(c => c.id === cabinet.id ? newCabinet : c));
+        } else {
+            cabinets.update(prev => [...prev, newCabinet]);
+        }
         dispatch('close');
     };
 </script>
 
 <div class="fixed inset-0 z-10 flex items-center justify-center bg-black bg-opacity-50">
     <div class="bg-white p-6 rounded shadow-md w-full max-w-sm">
-        <h3 class="text-lg font-semibold mb-4">Add Cabinet</h3>
+        <h3 class="text-lg font-semibold mb-4">{cabinet ? 'Edit Cabinet' : 'Add Cabinet'}</h3>
         <div class="space-y-2">
             <label class="block">Width (cm):
                 <input type="number" bind:value={width} class="border p-1 w-full" required />
@@ -146,7 +180,7 @@
             {/if}
             <div class="flex justify-end gap-2 pt-2">
                 <button class="px-3 py-1 bg-gray-400 text-white rounded" on:click={() => dispatch('close')}>Cancel</button>
-                <button class="px-3 py-1 bg-blue-600 text-white rounded" on:click={addCabinet}>Add</button>
+                <button class="px-3 py-1 bg-blue-600 text-white rounded" on:click={saveCabinet}>{cabinet ? 'Save' : 'Add'}</button>
             </div>
         </div>
     </div>

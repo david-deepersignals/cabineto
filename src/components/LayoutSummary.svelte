@@ -99,6 +99,11 @@ function exportCab(id: string) {
 
 <div class="mb-4">
   <svg bind:this={layoutSvg} width={svgWidth()} height={svgHeight()} style="border:1px solid #000">
+    <defs>
+      <pattern id="hatch" patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="4" stroke="black" stroke-width="0.5" />
+      </pattern>
+    </defs>
     {#each sorted as cab, i}
       {@const prev = sorted[i - 1]}
       {@const next = sorted[i + 1]}
@@ -106,11 +111,25 @@ function exportCab(id: string) {
       {@const y = (cab.y ?? 0) - bounds.minY + MARGIN}
       {@const w = cab.w / $scale}
       {@const h = cab.h / $scale}
+      {#if cab.type === 'corner' && (cab as any).fixedSide}
+        {@const fixed = (cab as any).fixedSide / $scale}
+        <rect x={x} y={y} width={fixed} height={h} fill="url(#hatch)" />
+      {/if}
       <rect x={x} y={y} width={w} height={h} fill="none" stroke="black" />
+
+      {#if cab.type === 'corner' && (cab as any).fixedSide}
+        <line x1={x + (cab as any).fixedSide / $scale} y1={y} x2={x + (cab as any).fixedSide / $scale} y2={y + h} stroke="black" stroke-dasharray="4 2" />
+      {/if}
 
       {#if cab.type === 'door' && (cab as any).doors}
         {#each Array((cab as any).doors - 1) as _, i}
           <line x1={x + w * (i + 1) / (cab as any).doors} y1={y} x2={x + w * (i + 1) / (cab as any).doors} y2={y + h} stroke="black" stroke-dasharray="4 2" />
+        {/each}
+        {#each Array((cab as any).doors) as _, i}
+          {@const doorWidth = w / (cab as any).doors}
+          {@const doorX = x + i * doorWidth}
+          {@const handleX = (cab as any).doors === 1 ? doorX + doorWidth - 5 : i === 0 ? doorX + doorWidth - 5 : doorX + 5}
+          <line x1={handleX} y1={y + h / 2 - 5} x2={handleX} y2={y + h / 2 + 5} stroke="black" />
         {/each}
       {/if}
 
@@ -120,13 +139,20 @@ function exportCab(id: string) {
           {@const pos = heights.slice(0, i + 1).reduce((a: number, b: number) => a + b, 0)}
           <line x1={x} x2={x + w} y1={y + h * pos / 100} y2={y + h * pos / 100} stroke="black" stroke-dasharray="4 2" />
         {/each}
-      {/if}
-      {#if cab.type === 'corner' && (cab as any).fixedSide}
-        <line x1={x + (cab as any).fixedSide / $scale} y1={y} x2={x + (cab as any).fixedSide / $scale} y2={y + h} stroke="black" stroke-dasharray="4 2" />
+        {#each heights as height, i}
+          {@const top = heights.slice(0, i).reduce((a: number, b: number) => a + b, 0)}
+          {@const mid = top + height / 2}
+          <line x1={x + w / 2 - 5} x2={x + w / 2 + 5} y1={y + h * mid / 100} y2={y + h * mid / 100} stroke="black" />
+        {/each}
       {/if}
 
       {#if cab.type === 'oven' && (cab as any).drawerHeight}
-        <line x1={x} x2={x + w} y1={y + (cab as any).drawerHeight / $scale} y2={y + (cab as any).drawerHeight / $scale} stroke="black" stroke-dasharray="4 2" />
+        {@const drawerH = (cab as any).drawerHeight / $scale}
+        <line x1={x} x2={x + w} y1={y + h - drawerH} y2={y + h - drawerH} stroke="black" stroke-dasharray="4 2" />
+        <line x1={x + w / 2 - 5} x2={x + w / 2 + 5} y1={y + h - drawerH / 2} y2={y + h - drawerH / 2} stroke="black" />
+        {@const ovenHeight = h - drawerH}
+        <rect x={x + w * 0.1} y={y + ovenHeight * 0.1} width={w * 0.8} height={ovenHeight * 0.8} fill="none" stroke="black" />
+        <rect x={x + w * 0.25} y={y + ovenHeight * 0.25} width={w * 0.5} height={ovenHeight * 0.5} fill="none" stroke="black" />
       {/if}
 
       <text x={x + w / 2} y={y + h / 2} text-anchor="middle" dominant-baseline="middle" font-size="12">{cab.id}</text>
@@ -186,11 +212,30 @@ function exportCab(id: string) {
   {#each $cabinets as cab}
     <div class="border p-2 flex flex-col items-center">
       <svg bind:this={cabinetSvgs[cab.id]} width={cab.w/$scale} height={cab.h/$scale} style="border:1px solid #000">
+        <defs>
+          <pattern id={`hatch-${cab.id}`} patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="4" stroke="black" stroke-width="0.5" />
+          </pattern>
+        </defs>
+        {#if cab.type === 'corner' && (cab as any).fixedSide}
+          {@const fixed = (cab as any).fixedSide / $scale}
+          <rect x="0" y="0" width={fixed} height={cab.h/$scale} fill={`url(#hatch-${cab.id})`} />
+        {/if}
         <rect x="0" y="0" width={cab.w/$scale} height={cab.h/$scale} fill="none" stroke="black" />
+
+        {#if cab.type === 'corner' && (cab as any).fixedSide}
+          <line x1={(cab as any).fixedSide / $scale} y1="0" x2={(cab as any).fixedSide / $scale} y2={cab.h/$scale} stroke="black" stroke-dasharray="4 2" />
+        {/if}
 
         {#if cab.type === 'door' && (cab as any).doors}
           {#each Array((cab as any).doors - 1) as _, i}
             <line x1={(cab.w/$scale) * (i + 1) / (cab as any).doors} y1="0" x2={(cab.w/$scale) * (i + 1) / (cab as any).doors} y2={cab.h/$scale} stroke="black" stroke-dasharray="4 2" />
+          {/each}
+          {#each Array((cab as any).doors) as _, i}
+            {@const doorWidth = (cab.w/$scale) / (cab as any).doors}
+            {@const doorX = i * doorWidth}
+            {@const handleX = (cab as any).doors === 1 ? doorX + doorWidth - 5 : i === 0 ? doorX + doorWidth - 5 : doorX + 5}
+            <line x1={handleX} y1={(cab.h/$scale)/2 - 5} x2={handleX} y2={(cab.h/$scale)/2 + 5} stroke="black" />
           {/each}
         {/if}
 
@@ -200,13 +245,20 @@ function exportCab(id: string) {
             {@const pos = heights.slice(0, i + 1).reduce((a: number, b: number) => a + b, 0)}
             <line x1="0" x2={cab.w/$scale} y1={(cab.h/$scale) * pos / 100} y2={(cab.h/$scale) * pos / 100} stroke="black" stroke-dasharray="4 2" />
           {/each}
-       {/if}
-        {#if cab.type === 'corner' && (cab as any).fixedSide}
-          <line x1={(cab as any).fixedSide / $scale} y1="0" x2={(cab as any).fixedSide / $scale} y2={cab.h/$scale} stroke="black" stroke-dasharray="4 2" />
+          {#each heights as height, i}
+            {@const top = heights.slice(0, i).reduce((a: number, b: number) => a + b, 0)}
+            {@const mid = top + height / 2}
+            <line x1={(cab.w/$scale)/2 - 5} x2={(cab.w/$scale)/2 + 5} y1={(cab.h/$scale) * mid / 100} y2={(cab.h/$scale) * mid / 100} stroke="black" />
+          {/each}
         {/if}
 
         {#if cab.type === 'oven' && (cab as any).drawerHeight}
-          <line x1="0" x2={cab.w/$scale} y1={(cab as any).drawerHeight / $scale} y2={(cab as any).drawerHeight / $scale} stroke="black" stroke-dasharray="4 2" />
+          {@const drawerH = (cab as any).drawerHeight / $scale}
+          <line x1="0" x2={cab.w/$scale} y1={cab.h/$scale - drawerH} y2={cab.h/$scale - drawerH} stroke="black" stroke-dasharray="4 2" />
+          <line x1={(cab.w/$scale)/2 - 5} x2={(cab.w/$scale)/2 + 5} y1={cab.h/$scale - drawerH/2} y2={cab.h/$scale - drawerH/2} stroke="black" />
+          {@const ovenHeight = cab.h/$scale - drawerH}
+          <rect x={(cab.w/$scale) * 0.1} y={ovenHeight * 0.1} width={(cab.w/$scale) * 0.8} height={ovenHeight * 0.8} fill="none" stroke="black" />
+          <rect x={(cab.w/$scale) * 0.25} y={ovenHeight * 0.25} width={(cab.w/$scale) * 0.5} height={ovenHeight * 0.5} fill="none" stroke="black" />
         {/if}
 
         <text x={(cab.w/$scale)/2} y={(cab.h/$scale)/2} text-anchor="middle" dominant-baseline="middle" font-size="12">{cab.id}</text>

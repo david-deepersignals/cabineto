@@ -1,8 +1,17 @@
 <script lang="ts">
-  import Form from "./components/Form.svelte";
-  import MaterialForm from "./components/MaterialForm.svelte";
-  import LayoutSummary from "./components/LayoutSummary.svelte";
-  import { cabinets } from './stores/cabinets';
+import Form from "./components/Form.svelte";
+import MaterialForm from "./components/MaterialForm.svelte";
+import LayoutSummary from "./components/LayoutSummary.svelte";
+import { cabinets } from './stores/cabinets';
+import { scale } from './stores/scale';
+
+const GRID_SIZE = 10;
+const layoutWidthMm = 1000;
+const layoutHeightMm = 500;
+let layout: HTMLDivElement;
+
+$: layoutWidth = layoutWidthMm;
+$: layoutHeight = layoutHeightMm;
 
   const downloadCSV = () => {
     let csv = "1. dimension (mm),2. dimension (mm),quantity,edge banding right,edge banding left,edge banding bottom,edge banding top,label,hinge location\n";
@@ -35,11 +44,23 @@
     showMaterialForm = !showMaterialForm;
   };
 
-  let dragInfo: { isDragging: boolean; offsetX: number; offsetY: number; targetId: string | null } = {
+  const zoomIn = () => scale.update(s => Math.max(0.5, s - 0.5));
+  const zoomOut = () => scale.update(s => s + 0.5);
+
+  let dragInfo: {
+    isDragging: boolean;
+    offsetX: number;
+    offsetY: number;
+    targetId: string | null;
+    layoutLeft: number;
+    layoutTop: number;
+  } = {
     isDragging: false,
     offsetX: 0,
     offsetY: 0,
-    targetId: null
+    targetId: null,
+    layoutLeft: 0,
+    layoutTop: 0
   };
 
 
@@ -47,23 +68,30 @@
     // Find the cabinet being dragged
     const target = event.target as HTMLElement;
     const rect = target.getBoundingClientRect();
+    const layoutRect = layout.getBoundingClientRect();
 
-    console.log(rect);
-    console.log(event);
     dragInfo.isDragging = true;
     dragInfo.targetId = cabinetId;
     dragInfo.offsetX = event.clientX - rect.left;
     dragInfo.offsetY = event.clientY - rect.top;
+    dragInfo.layoutLeft = layoutRect.left;
+    dragInfo.layoutTop = layoutRect.top;
   }
 
   function handleDrag(event: MouseEvent) {
     if (!dragInfo.isDragging || dragInfo.targetId === null) return;
 
-    // Calculate current position based on cursor and offset
-    const x = event.clientX - dragInfo.offsetX;
-    const y = event.clientY - dragInfo.offsetY;
+    // Calculate current position based on cursor and offset, relative to the layout
+    let x = event.clientX - dragInfo.layoutLeft - dragInfo.offsetX;
+    let y = event.clientY - dragInfo.layoutTop - dragInfo.offsetY;
 
-    console.log(x, y);
+    const index = $cabinets.findIndex((cab) => cab.id === dragInfo.targetId);
+    const currentCab = $cabinets[index];
+    const w = currentCab?.w ? currentCab.w / $scale : 0;
+    const h = currentCab?.h ? currentCab.h / $scale : 0;
+    x = Math.max(0, Math.min(layoutWidth - w, x));
+    y = Math.max(0, Math.min(layoutHeight - h, y));
+
     // Update cabinet position in store
     cabinets.update((current) => {
       const index = current.findIndex((cab) => cab.id === dragInfo.targetId);
@@ -85,14 +113,20 @@
       if (index === -1) return current;
 
       const draggedCabinet = current[index];
-      let finalLeft = Math.round(((draggedCabinet.x ?? 0) / 10)) * 10;
-      let finalTop = Math.round(((draggedCabinet.y ?? 0) / 10)) * 10;
+      let finalLeft = Math.round(((draggedCabinet.x ?? 0) / GRID_SIZE)) * GRID_SIZE;
+      let finalTop = Math.round(((draggedCabinet.y ?? 0) / GRID_SIZE)) * GRID_SIZE;
+
+      const w = draggedCabinet.w / $scale || 100;
+      const h = draggedCabinet.h / $scale || 100;
+
+      finalLeft = Math.max(0, Math.min(layoutWidth - w, finalLeft));
+      finalTop = Math.max(0, Math.min(layoutHeight - h, finalTop));
 
       const rect1 = {
         x: finalLeft,
         y: finalTop,
-        w: draggedCabinet.w / 3 || 100, // Default width/height if not provided
-        h: draggedCabinet.h / 3 || 100
+        w,
+        h
       };
 
       let collision = false;
@@ -105,8 +139,8 @@
         const rect2 = {
           x: otherCabinet.x ?? 0,
           y: otherCabinet.y ?? 0,
-          w: otherCabinet.w / 3 || 100,
-          h: otherCabinet.h / 3|| 100
+          w: otherCabinet.w / $scale || 100,
+          h: otherCabinet.h / $scale || 100
         };
 
         if (
@@ -126,8 +160,11 @@
           ];
 
           for (let [snapX, snapY] of snapOptions) {
-            snapX = Math.round(snapX / 10) * 10;
-            snapY = Math.round(snapY / 10) * 10;
+            snapX = Math.round(snapX / GRID_SIZE) * GRID_SIZE;
+            snapY = Math.round(snapY / GRID_SIZE) * GRID_SIZE;
+
+            snapX = Math.max(0, Math.min(layoutWidth - rect1.w, snapX));
+            snapY = Math.max(0, Math.min(layoutHeight - rect1.h, snapY));
 
             const testRect = { x: snapX, y: snapY, w: rect1.w, h: rect1.h };
 
@@ -188,12 +225,18 @@
 </script>
 
 <style>
+  .layout-container {
+    position: relative;
+    margin-bottom: 40px;
+    margin-right: 40px;
+  }
   #layout {
-    width: 100%;
     border: 2px dashed #ccc;
     position: relative;
-    margin-bottom: 20px;
     background-color: #f8fafc;
+    background-image: linear-gradient(#e5e7eb 1px, transparent 1px),
+      linear-gradient(90deg, #e5e7eb 1px, transparent 1px);
+    background-size: 10px 10px;
   }
   .cabinet {
     position: absolute;
@@ -203,6 +246,46 @@
     text-align: center;
     font-size: 10px;
     cursor: move;
+  }
+  .dim-x {
+    position: absolute;
+    bottom: -20px;
+    left: 0;
+    width: 100%;
+    height: 20px;
+    border-top: 1px solid #999;
+  }
+  .dim-y {
+    position: absolute;
+    top: 0;
+    right: -20px;
+    width: 20px;
+    height: 100%;
+    border-left: 1px solid #999;
+  }
+  .dim-x .tick {
+    position: absolute;
+    bottom: 0;
+    border-left: 1px solid #999;
+    height: 10px;
+  }
+  .dim-x .tick span {
+    position: absolute;
+    top: 10px;
+    transform: translateX(-50%);
+    font-size: 10px;
+  }
+  .dim-y .tick {
+    position: absolute;
+    right: 0;
+    border-top: 1px solid #999;
+    width: 10px;
+  }
+  .dim-y .tick span {
+    position: absolute;
+    left: 10px;
+    transform: translateY(-50%);
+    font-size: 10px;
   }
 </style>
 
@@ -225,29 +308,44 @@
       <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => showSummary = true}>
         Layout Summary
       </button>
+      <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={zoomIn}>+</button>
+      <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={zoomOut}>-</button>
     </div>
 
-    <div id="layout">
-      {#each $cabinets as cabinet,index}
-        <div
-                class="cabinet"
-                role="button"
-                tabindex="{index}"
-                style="left: {cabinet.x}px; top: {cabinet.y}px; width: {cabinet.w/3}px; height: {cabinet.h/3}px;"
-                on:mousedown={(e) => startDrag(e, cabinet.id)}
-        >
-          {`Cabinet ${cabinet.id}`}
-          {#if cabinet.type === 'door'}
+    <div class="layout-container" style="width: {layoutWidth}px; height: {layoutHeight}px;">
+      <div id="layout" bind:this={layout} style="width: {layoutWidth}px; height: {layoutHeight}px;">
+        {#each $cabinets as cabinet, index}
+          <div
+            class="cabinet"
+            role="button"
+            tabindex="{index}"
+            style="left: {cabinet.x}px; top: {cabinet.y}px; width: {cabinet.w/$scale}px; height: {cabinet.h/$scale}px;"
+            on:mousedown={(e) => startDrag(e, cabinet.id)}
+          >
+            {`Cabinet ${cabinet.id}`}
+            {#if cabinet.type === 'door'}
               🚪 {(cabinet as any).doors} door(s)
-
             {/if}
-          {#if cabinet.type === 'drawer'}
-            🗄️ {(cabinet as any).drawers} drawer(s)<br>{(cabinet as any).heights.join("% / ")}
+            {#if cabinet.type === 'drawer'}
+              🗄️ {(cabinet as any).drawers} drawer(s)<br>{(cabinet as any).heights.join("% / ")}
             {/if}
-        </div>
-      {/each}
-
-
+          </div>
+        {/each}
+      </div>
+      <div class="dim-x">
+          {#each $cabinets as cab}
+            <div class="tick" style="left: {(cab.x ?? 0) + ((cab.w ?? 0) / ($scale * 2))}px;">
+              <span>{Math.round(cab.w ?? 0)}</span>
+            </div>
+          {/each}
+      </div>
+      <div class="dim-y">
+          {#each $cabinets as cab}
+            <div class="tick" style="top: {(cab.y ?? 0) + ((cab.h ?? 0) / ($scale * 2))}px;">
+              <span>{Math.round(cab.h ?? 0)}</span>
+            </div>
+          {/each}
+      </div>
     </div>
 
     {#if showForm}

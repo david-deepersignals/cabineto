@@ -68,7 +68,7 @@
     };
 </script>
 
-<div class="inset-0 flex items-center justify-center bg-black bg-opacity-50">
+<div class="fixed inset-0 z-10 flex items-center justify-center bg-black bg-opacity-50">
     <div class="bg-white p-6 rounded shadow-md w-full max-w-sm">
         <h3 class="text-lg font-semibold mb-4">Add Cabinet</h3>
         <div class="space-y-2">

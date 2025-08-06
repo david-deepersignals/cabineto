@@ -11,8 +11,8 @@ const SCALE = 3; // 1px represents 3mm
 const DIM_OFFSET = 20;
 const MARGIN = 40;
 
-interface Bounds { minX: number; minY: number; width: number; height: number; heights: number[]; }
-let bounds: Bounds = { minX: 0, minY: 0, width: 0, height: 0 ,heights: []};
+interface Bounds { minX: number; minY: number; width: number; height: number; }
+let bounds: Bounds = { minX: 0, minY: 0, width: 0, height: 0 };
 let sorted: any[] = [];
 
 
@@ -22,14 +22,34 @@ $: bounds = (() => {
   const minY = Math.min(...$cabinets.map(c => c.y ?? 0));
   const maxX = Math.max(...$cabinets.map(c => (c.x ?? 0) + c.w / SCALE));
   const maxY = Math.max(...$cabinets.map(c => (c.y ?? 0) + c.h / SCALE));
-  const heights = Array.from(
-          new Set($cabinets.map(c => c.h ?? 0)) // Get unique heights
-  ).sort((a, b) => b - a);
 
-  return { minX, minY, width: maxX - minX, height: maxY - minY ,heights};
+  return { minX, minY, width: maxX - minX, height: maxY - minY };
 })();
 
 $: sorted = $cabinets.slice().sort((a, b) => (a.x ?? 0) - (b.x ?? 0));
+
+let heightTicks: number[] = [];
+interface HeightSegment { start: number; end: number; mid: number; size: number; }
+let heightSegments: HeightSegment[] = [];
+
+$: {
+  const edges = new Set<number>();
+  $cabinets.forEach(cab => {
+    const top = (cab.y ?? 0) - bounds.minY;
+    const bottom = top + cab.h / SCALE;
+    edges.add(top);
+    edges.add(bottom);
+  });
+  edges.add(0);
+  edges.add(bounds.height);
+  heightTicks = Array.from(edges).sort((a, b) => a - b);
+  heightSegments = heightTicks.slice(0, -1).map((start, i) => ({
+    start,
+    end: heightTicks[i + 1],
+    mid: (start + heightTicks[i + 1]) / 2,
+    size: Math.round((heightTicks[i + 1] - start) * SCALE)
+  }));
+}
 
 const totalWidthMm = () => Math.round(bounds.width * SCALE);
 const totalHeightMm = () => Math.round(bounds.height * SCALE);
@@ -124,13 +144,12 @@ function exportCab(id: string) {
 
     <!-- total height dimension line -->
     <line x1={bounds.width + MARGIN + DIM_OFFSET} y1={MARGIN} x2={bounds.width + MARGIN + DIM_OFFSET} y2={bounds.height + MARGIN} stroke="black" />
-
-    {#each bounds.heights as height,index}
-    <line x1={bounds.width + MARGIN + DIM_OFFSET - 5} y1={bounds.height + MARGIN - (height/SCALE)} x2={bounds.width + MARGIN + DIM_OFFSET + 5} y2={bounds.height + MARGIN - (height/SCALE)} stroke="black" />
-      <text x={bounds.width + MARGIN + DIM_OFFSET + 5} y={(bounds.height + MARGIN - (height/SCALE)) + (((height - (bounds.heights[index+1] ?? 0)) / 3)/2)} font-size="12" dominant-baseline="middle">{height - (bounds.heights[index+1] ?? 0)} mm</text>
-      {/each}
-    <line x1={bounds.width + MARGIN + DIM_OFFSET - 5} y1={bounds.height + MARGIN} x2={bounds.width + MARGIN + DIM_OFFSET + 5} y2={bounds.height + MARGIN} stroke="black" />
-
+    {#each heightTicks as pos}
+      <line x1={bounds.width + MARGIN + DIM_OFFSET - 5} y1={MARGIN + pos} x2={bounds.width + MARGIN + DIM_OFFSET + 5} y2={MARGIN + pos} stroke="black" />
+    {/each}
+    {#each heightSegments as seg}
+      <text x={bounds.width + MARGIN + DIM_OFFSET + 5} y={MARGIN + seg.mid} font-size="12" dominant-baseline="middle">{seg.size} mm</text>
+    {/each}
   </svg>
   <p>Total width: {totalWidthMm()} mm, Total height: {totalHeightMm()} mm</p>
 </div>

@@ -7,17 +7,34 @@ const dispatch = createEventDispatcher();
 let layoutSvg: SVGSVGElement;
 let cabinetSvgs: Record<string, SVGSVGElement> = {};
 
-interface Bounds { minX: number; minY: number; width: number; height: number; }
-let bounds: Bounds = { minX: 0, minY: 0, width: 0, height: 0 };
+const SCALE = 3; // 1px represents 3mm
+const DIM_OFFSET = 20;
+const MARGIN = 40;
+
+interface Bounds { minX: number; minY: number; width: number; height: number; heights: number[]; }
+let bounds: Bounds = { minX: 0, minY: 0, width: 0, height: 0 ,heights: []};
+let sorted: any[] = [];
+
 
 $: bounds = (() => {
   if ($cabinets.length === 0) return { minX: 0, minY: 0, width: 0, height: 0 };
   const minX = Math.min(...$cabinets.map(c => c.x ?? 0));
   const minY = Math.min(...$cabinets.map(c => c.y ?? 0));
-  const maxX = Math.max(...$cabinets.map(c => (c.x ?? 0) + c.w));
-  const maxY = Math.max(...$cabinets.map(c => (c.y ?? 0) + c.h));
-  return { minX, minY, width: maxX - minX, height: maxY - minY };
+  const maxX = Math.max(...$cabinets.map(c => (c.x ?? 0) + c.w / SCALE));
+  const maxY = Math.max(...$cabinets.map(c => (c.y ?? 0) + c.h / SCALE));
+  const heights = Array.from(
+          new Set($cabinets.map(c => c.h ?? 0)) // Get unique heights
+  ).sort((a, b) => b - a);
+
+  return { minX, minY, width: maxX - minX, height: maxY - minY ,heights};
 })();
+
+$: sorted = $cabinets.slice().sort((a, b) => (a.x ?? 0) - (b.x ?? 0));
+
+const totalWidthMm = () => Math.round(bounds.width * SCALE);
+const totalHeightMm = () => Math.round(bounds.height * SCALE);
+const svgWidth = () => bounds.width + MARGIN + DIM_OFFSET * 5;
+const svgHeight = () => bounds.height + MARGIN + DIM_OFFSET * 5;
 
 function exportSVG(el: SVGSVGElement, filename: string) {
   const serializer = new XMLSerializer();
@@ -47,13 +64,75 @@ function exportCab(id: string) {
 </div>
 
 <div class="mb-4">
-  <svg bind:this={layoutSvg} width={bounds.width} height={bounds.height} style="border:1px solid #000">
-    {#each $cabinets as cab}
-      <rect x={(cab.x ?? 0) - bounds.minX} y={(cab.y ?? 0) - bounds.minY} width={cab.w/3} height={cab.h/3} fill="none" stroke="black" />
-      <text x={(cab.x ?? 0) - bounds.minX + (cab.w/3)/2} y={(cab.y ?? 0) - bounds.minY + (cab.h/3)/2} text-anchor="middle" dominant-baseline="middle" font-size="12">{cab.id}</text>
+  <svg bind:this={layoutSvg} width={svgWidth()} height={svgHeight()} style="border:1px solid #000">
+    {#each sorted as cab, i}
+      {@const prev = sorted[i - 1]}
+      {@const next = sorted[i + 1]}
+      {@const x = (cab.x ?? 0) - bounds.minX + MARGIN}
+      {@const y = (cab.y ?? 0) - bounds.minY + MARGIN}
+      {@const w = cab.w / SCALE}
+      {@const h = cab.h / SCALE}
+      <rect x={x} y={y} width={w} height={h} fill="none" stroke="black" />
+
+      {#if cab.type === 'door' && (cab as any).doors}
+        {#each Array((cab as any).doors - 1) as _, i}
+          <line x1={x + w * (i + 1) / (cab as any).doors} y1={y} x2={x + w * (i + 1) / (cab as any).doors} y2={y + h} stroke="black" stroke-dasharray="4 2" />
+        {/each}
+      {/if}
+
+      {#if cab.type === 'drawer' && (cab as any).heights}
+        {@const heights = (cab as any).heights}
+        {#each heights.slice(0, -1) as _, i}
+          {@const pos = heights.slice(0, i + 1).reduce((a: number, b: number) => a + b, 0)}
+          <line x1={x} x2={x + w} y1={y + h * pos / 100} y2={y + h * pos / 100} stroke="black" stroke-dasharray="4 2" />
+        {/each}
+      {/if}
+
+      <text x={x + w / 2} y={y + h / 2} text-anchor="middle" dominant-baseline="middle" font-size="12">{cab.id}</text>
+
+      {@const prevSame = prev && prev.h === cab.h && (prev.y ?? 0) === (cab.y ?? 0) && Math.abs((prev.x ?? 0) + prev.w / SCALE - (cab.x ?? 0)) < 0.01}
+      {@const nextSame = next && next.h === cab.h && (next.y ?? 0) === (cab.y ?? 0) && Math.abs((cab.x ?? 0) + cab.w / SCALE - (next.x ?? 0)) < 0.01}
+
+<!--      <line x1={bounds.width + MARGIN + DIM_OFFSET - 5} y1={y} x2={bounds.width + MARGIN + DIM_OFFSET + 5} y2={y} stroke="red" />-->
+<!--      <text x={bounds.width + MARGIN + DIM_OFFSET - 5} y={y}  stroke="red" text-anchor="middle" dominant-baseline="middle" font-size="12">{totalHeightMm() - cab.h}</text>-->
+
+      <!--{#if !prevSame}-->
+      <!--  <line x1={x - DIM_OFFSET / 2} y1={y} x2={x - DIM_OFFSET / 2} y2={y + h} stroke="black" />-->
+      <!--  <line x1={x - DIM_OFFSET / 2 - 5} y1={y} x2={x - DIM_OFFSET / 2 + 5} y2={y} stroke="black" />-->
+      <!--  <line x1={x - DIM_OFFSET / 2 - 5} y1={y + h} x2={x - DIM_OFFSET / 2 + 5} y2={y + h} stroke="black" />-->
+      <!--  <text x={x - DIM_OFFSET} y={y + h / 2} text-anchor="end" dominant-baseline="middle" font-size="12">{Math.round(cab.h)} mm</text>-->
+      <!--{/if}-->
+
+      <!--<line x1={x + w + DIM_OFFSET / 2} y1={y} x2={x + w + DIM_OFFSET / 2} y2={y + h} stroke="black" />-->
+      <!--<line x1={x + w + DIM_OFFSET / 2 - 5} y1={y} x2={x + w + DIM_OFFSET / 2 + 5} y2={y} stroke="black" />-->
+      <!--<line x1={x + w + DIM_OFFSET / 2 - 5} y1={y + h} x2={x + w + DIM_OFFSET / 2 + 5} y2={y + h} stroke="black" />-->
+      <!--{#if !nextSame}-->
+      <!--  <text x={x + w + DIM_OFFSET} y={y + h / 2} dominant-baseline="middle" font-size="12">{Math.round(cab.h)} mm</text>-->
+      <!--{/if}-->
     {/each}
+
+    <!-- horizontal dimension line for cabinet widths -->
+    <line x1={MARGIN} y1={bounds.height + MARGIN + DIM_OFFSET} x2={bounds.width + MARGIN} y2={bounds.height + MARGIN + DIM_OFFSET} stroke="black" />
+    {#each sorted as cab}
+      {@const x = (cab.x ?? 0) - bounds.minX + MARGIN}
+      {@const w = cab.w / SCALE}
+      <line x1={x} y1={bounds.height + MARGIN + DIM_OFFSET - 5} x2={x} y2={bounds.height + MARGIN + DIM_OFFSET + 5} stroke="black" />
+      <line x1={x + w} y1={bounds.height + MARGIN + DIM_OFFSET - 5} x2={x + w} y2={bounds.height + MARGIN + DIM_OFFSET + 5} stroke="black" />
+      <text x={x + w / 2} y={bounds.height + MARGIN + DIM_OFFSET + 15} text-anchor="middle" font-size="12">{Math.round(cab.w)} mm</text>
+    {/each}
+    <text x={bounds.width / 2 + MARGIN} y={bounds.height + MARGIN + DIM_OFFSET + 35} text-anchor="middle" font-size="12">Total {totalWidthMm()} mm</text>
+
+    <!-- total height dimension line -->
+    <line x1={bounds.width + MARGIN + DIM_OFFSET} y1={MARGIN} x2={bounds.width + MARGIN + DIM_OFFSET} y2={bounds.height + MARGIN} stroke="black" />
+
+    {#each bounds.heights as height,index}
+    <line x1={bounds.width + MARGIN + DIM_OFFSET - 5} y1={bounds.height + MARGIN - (height/SCALE)} x2={bounds.width + MARGIN + DIM_OFFSET + 5} y2={bounds.height + MARGIN - (height/SCALE)} stroke="black" />
+      <text x={bounds.width + MARGIN + DIM_OFFSET + 5} y={(bounds.height + MARGIN - (height/SCALE)) + (((height - (bounds.heights[index+1] ?? 0)) / 3)/2)} font-size="12" dominant-baseline="middle">{height - (bounds.heights[index+1] ?? 0)} mm</text>
+      {/each}
+    <line x1={bounds.width + MARGIN + DIM_OFFSET - 5} y1={bounds.height + MARGIN} x2={bounds.width + MARGIN + DIM_OFFSET + 5} y2={bounds.height + MARGIN} stroke="black" />
+
   </svg>
-  <p>Total width: {bounds.width} mm, Total height: {bounds.height} mm</p>
+  <p>Total width: {totalWidthMm()} mm, Total height: {totalHeightMm()} mm</p>
 </div>
 
 <h3 class="font-semibold mb-2">Cabinet Drawings</h3>
@@ -62,6 +141,21 @@ function exportCab(id: string) {
     <div class="border p-2 flex flex-col items-center">
       <svg bind:this={cabinetSvgs[cab.id]} width={cab.w/3} height={cab.h/3} style="border:1px solid #000">
         <rect x="0" y="0" width={cab.w/3} height={cab.h/3} fill="none" stroke="black" />
+
+        {#if cab.type === 'door' && (cab as any).doors}
+          {#each Array((cab as any).doors - 1) as _, i}
+            <line x1={(cab.w/3) * (i + 1) / (cab as any).doors} y1="0" x2={(cab.w/3) * (i + 1) / (cab as any).doors} y2={cab.h/3} stroke="black" stroke-dasharray="4 2" />
+          {/each}
+        {/if}
+
+        {#if cab.type === 'drawer' && (cab as any).heights}
+          {@const heights = (cab as any).heights}
+          {#each heights.slice(0, -1) as _, i}
+            {@const pos = heights.slice(0, i + 1).reduce((a: number, b: number) => a + b, 0)}
+            <line x1="0" x2={cab.w/3} y1={(cab.h/3) * pos / 100} y2={(cab.h/3) * pos / 100} stroke="black" stroke-dasharray="4 2" />
+          {/each}
+        {/if}
+
         <text x={(cab.w/3)/2} y={(cab.h/3)/2} text-anchor="middle" dominant-baseline="middle" font-size="12">{cab.id}</text>
       </svg>
       <button class="mt-2 px-2 py-1 bg-green-600 text-white rounded text-xs" on:click={() => exportCab(cab.id)}>Export {cab.id}</button>

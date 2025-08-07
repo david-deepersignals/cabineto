@@ -2,113 +2,35 @@
 import Form from "./components/Form.svelte";
 import MaterialForm from "./components/MaterialForm.svelte";
 import LayoutSummary from "./components/LayoutSummary.svelte";
+import BackupModal from "./components/BackupModal.svelte";
 import { cabinets } from './stores/cabinets';
 import { scale } from './stores/scale';
-import type { Corpus, Panel } from './cabinet/Corpus';
+import type { Corpus } from './cabinet/Corpus';
+import { onMount } from 'svelte';
 
 const GRID_SIZE = 10;
-const layoutWidthMm = 1000;
-const layoutHeightMm = 500;
+let layoutWidthMm = 1000;
+let layoutHeightMm = 500;
 let layout: HTMLDivElement;
+
+function updateLayoutSize() {
+  layoutWidthMm = window.innerWidth - 100;
+  layoutHeightMm = window.innerHeight - 250;
+}
+
+onMount(() => {
+  updateLayoutSize();
+  window.addEventListener('resize', updateLayoutSize);
+  return () => window.removeEventListener('resize', updateLayoutSize);
+});
 
 $: layoutWidth = layoutWidthMm;
 $: layoutHeight = layoutHeightMm;
 
-const downloadJSON = () => {
-  const json = JSON.stringify($cabinets, null, 2);
-  const blob = new Blob([json], {type: 'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "cabinets.json";  // Specify the file name
-  a.click();
-};
-  const downloadCSV = () => {
-
-
-
-    
-    let csv = csvMaxMoris();
-
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "cabinet_panels.csv";
-    a.click();
-  };
-
-
-  function csvGeneral() {
-    let csv = "length (mm),width (mm),quantity,edge banding length right,edge banding length left,edge banding width bottom,edge banding width top,label,hinge location,material name,material thickness\n";
-
-    $cabinets.forEach(cab => {
-      cab.panels().forEach((p: Panel) => {
-        csv += [
-          p.length,
-          p.width,
-          p.quantity,
-          p.edgeBandingLengthRight,
-          p.edgeBandingLengthLeft,
-          p.edgeBandingWidthBottom,
-          p.edgeBandingWidthTop,
-          p.label,
-          p.hingeLocation,
-          p.material,
-          p.materialThickness
-        ].join(",") + "\n";
-      })
-    });
-
-    return csv
-
-  }
-
-function csvMaxMoris() {
-  let csv = "BR.,ŠIFRA MATERIJALA,DEB. mm,NAZIV ELEMENTA U KORPUSU,NAZIV KORPUSA,DUŽINA (Smjer goda) mm,ŠIRINA mm,KOM.,DUPLA PLOČA,ABS 2mm - DUŽINA (Prednji rub),ABS 2mm - DUŽINA (Stražnji rub),ABS 2mm - ŠIRINA (Lijevi rub),ABS 2mm - ŠIRINA (Desni rub),ABS 1mm - DUŽINA (Prednji rub),ABS 1mm - DUŽINA (Stražnji rub),ABS 1mm - ŠIRINA (Lijevi rub),ABS 1mm - ŠIRINA (Desni rub),ABS 0.5mm - DUŽINA (Prednji rub),ABS 0.5mm - DUŽINA (Stražnji rub),ABS 0.5mm - ŠIRINA (Lijevi rub),ABS 0.5mm - ŠIRINA (Desni rub),UTOR/LIMBEL,UKOP ZA BRITVELE,NAPOMENA\n"
-
-  let index = 1;
-  $cabinets.forEach(cab => {
-    cab.panels().forEach((p: Panel) => {
-      csv += [
-             index,
-             p.material,
-             p.materialThickness,
-             p.label.split("->")[1],
-             p.label.split("->")[0],
-             p.length,
-             p.width,
-              p.quantity,
-             'NE',
-             '', //ABS 2mm
-             '', //ABS 2mm
-             '', //ABS 2mm
-             '', //ABS 2mm
-            p.edgeBandingLengthRight,
-            p.edgeBandingLengthLeft,
-            p.edgeBandingWidthBottom,
-            p.edgeBandingWidthTop,
-            '', //ABS 0.5mm
-            '', //ABS 0.5mm
-            '', //ABS 0.5mm
-            '', //ABS 0.5mm,
-            '', //limbel TBD,
-            p.hingeLocation,
-              ''
-      ].join(",") + "\n";
-
-      index++;
-    })
-  });
-
-  return csv
-
-}
-
-  let showForm = false;
+let showForm = false;
   let showMaterialForm = false;
   let showSummary = false;
+  let showBackup = false;
   let editingCabinet: Corpus | null = null;
 
   const openAddForm = () => {
@@ -128,6 +50,10 @@ function csvMaxMoris() {
 
   const toggleMaterialForm = () => {
     showMaterialForm = !showMaterialForm;
+  };
+
+  const toggleBackup = () => {
+    showBackup = !showBackup;
   };
 
   const deleteCabinet = (id: string) => {
@@ -432,17 +358,15 @@ function csvMaxMoris() {
       <button on:click={toggleMaterialForm} class="px-4 py-2 bg-purple-600 text-white rounded">
         {showMaterialForm ? 'Close Materials' : 'Materials'}
       </button>
-      <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={() => downloadCSV()}>
-        Download CSV
+      <button class="px-4 py-2 bg-yellow-600 text-white rounded" on:click={toggleBackup}>
+        Backups
       </button>
       <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => showSummary = true}>
         Layout Summary
       </button>
-      <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={zoomIn}>+</button>
-      <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={zoomOut}>-</button>
     </div>
 
-    <div class="layout-container" style="width: {layoutWidth}px; height: {layoutHeight}px;">
+    <div class="layout-container relative" style="width: {layoutWidth}px; height: {layoutHeight}px;">
       <div id="layout" bind:this={layout} style="width: {layoutWidth}px; height: {layoutHeight}px;">
         {#each $cabinets as cabinet, index}
           <div
@@ -487,6 +411,10 @@ function csvMaxMoris() {
             </div>
           {/each}
       </div>
+      <div class="absolute bottom-2 right-2 flex flex-col gap-2">
+        <button class="px-2 py-1 bg-gray-600 text-white rounded" on:click={zoomIn}>+</button>
+        <button class="px-2 py-1 bg-gray-600 text-white rounded" on:click={zoomOut}>-</button>
+      </div>
     </div>
 
     {#if showForm}
@@ -495,5 +423,8 @@ function csvMaxMoris() {
     {#if showMaterialForm}
       <MaterialForm on:close={() => showMaterialForm = false} />
     {/if}
+  {/if}
+  {#if showBackup}
+    <BackupModal on:close={() => showBackup = false} />
   {/if}
 </div>

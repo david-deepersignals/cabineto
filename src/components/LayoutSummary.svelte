@@ -2,6 +2,7 @@
 import { cabinets } from '../stores/cabinets';
 import { createEventDispatcher } from 'svelte';
 import { scale } from '../stores/scale';
+import type { Panel } from '../cabinet/Corpus';
 
 const dispatch = createEventDispatcher();
 
@@ -19,6 +20,8 @@ let bounds: Bounds = { minX: 0, minY: 0, width: 0, height: 0 };
 let sorted: any[] = [];
 interface CabinetRow { y: number; cabinets: any[]; }
 let rows: CabinetRow[] = [];
+
+let csvType: 'general' | 'max' = 'general';
 
 
 $: bounds = (() => {
@@ -93,9 +96,89 @@ function exportCab(id: string) {
   const el = cabinetSvgs[id];
   if (el) exportSVG(el, `${id}.svg`);
 }
+
+function downloadCSV() {
+  const csv = csvType === 'general' ? csvGeneral() : csvMaxMoris();
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'cabinet_panels.csv';
+  a.click();
+}
+
+function csvGeneral() {
+  let csv = "length (mm),width (mm),quantity,edge banding length right,edge banding length left,edge banding width bottom,edge banding width top,label,hinge location,material name,material thickness\n";
+
+  $cabinets.forEach(cab => {
+    console.log(cab);
+    cab.panels().forEach((p: Panel) => {
+      csv += [
+        p.length,
+        p.width,
+        p.quantity,
+        p.edgeBandingLengthRight,
+        p.edgeBandingLengthLeft,
+        p.edgeBandingWidthBottom,
+        p.edgeBandingWidthTop,
+        p.label,
+        p.hingeLocation,
+        p.material,
+        p.materialThickness
+      ].join(",") + "\n";
+    });
+  });
+
+  return csv;
+}
+
+function csvMaxMoris() {
+  let csv = "BR.,ŠIFRA MATERIJALA,DEB. mm,NAZIV ELEMENTA U KORPUSU,NAZIV KORPUSA,DUŽINA (Smjer goda) mm,ŠIRINA mm,KOM.,DUPLA PLOČA,ABS 2mm - DUŽINA (Prednji rub),ABS 2mm - DUŽINA (Stražnji rub),ABS 2mm - ŠIRINA (Lijevi rub),ABS 2mm - ŠIRINA (Desni rub),ABS 1mm - DUŽINA (Prednji rub),ABS 1mm - DUŽINA (Stražnji rub),ABS 1mm - ŠIRINA (Lijevi rub),ABS 1mm - ŠIRINA (Desni rub),ABS 0.5mm - DUŽINA (Prednji rub),ABS 0.5mm - DUŽINA (Stražnji rub),ABS 0.5mm - ŠIRINA (Lijevi rub),ABS 0.5mm - ŠIRINA (Desni rub),UTOR/LIMBEL,UKOP ZA BRITVELE,NAPOMENA\n";
+
+  let index = 1;
+  $cabinets.forEach(cab => {
+    cab.panels().forEach((p: Panel) => {
+      csv += [
+        index,
+        p.material,
+        p.materialThickness,
+        p.label.split("->")[1],
+        p.label.split("->")[0],
+        p.length,
+        p.width,
+        p.quantity,
+        'NE',
+        '', // ABS 2mm
+        '', // ABS 2mm
+        '', // ABS 2mm
+        '', // ABS 2mm
+        p.edgeBandingLengthRight,
+        p.edgeBandingLengthLeft,
+        p.edgeBandingWidthBottom,
+        p.edgeBandingWidthTop,
+        '', // ABS 0.5mm
+        '', // ABS 0.5mm
+        '', // ABS 0.5mm
+        '', // ABS 0.5mm
+        '', // limbel TBD
+        p.hingeLocation,
+        ''
+      ].join(",") + "\n";
+
+      index++;
+    });
+  });
+
+  return csv;
+}
 </script>
 
-<div class="mb-4 flex gap-2">
+<div class="mb-4 flex gap-2 items-center">
+  <select bind:value={csvType} class="border p-2">
+    <option value="general">General</option>
+    <option value="max">Max Moris</option>
+  </select>
+  <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={downloadCSV}>Download CSV</button>
   <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={exportLayout}>Export Layout</button>
   <button class="px-4 py-2 bg-blue-600 text-white rounded" on:click={() => dispatch('close')}>Back</button>
 </div>

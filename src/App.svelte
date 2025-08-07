@@ -28,7 +28,20 @@ const downloadJSON = () => {
 
 
     
-    let csv = "length (mm),width (mm),quantity,edge banding length right,edge banding length left,edge banding width bottom,edge banding width top,label,hinge location\n";
+    let csv = csvMaxMoris();
+
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cabinet_panels.csv";
+    a.click();
+  };
+
+
+  function csvGeneral() {
+    let csv = "length (mm),width (mm),quantity,edge banding length right,edge banding length left,edge banding width bottom,edge banding width top,label,hinge location,material name,material thickness\n";
 
     $cabinets.forEach(cab => {
       cab.panels().forEach((p: Panel) => {
@@ -41,19 +54,58 @@ const downloadJSON = () => {
           p.edgeBandingWidthBottom,
           p.edgeBandingWidthTop,
           p.label,
-          p.hingeLocation
+          p.hingeLocation,
+          p.material,
+          p.materialThickness
         ].join(",") + "\n";
       })
     });
 
+    return csv
 
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "cabinet_panels.csv";
-    a.click();
-  };
+  }
+
+function csvMaxMoris() {
+  let csv = "BR.,ŠIFRA MATERIJALA,DEB. mm,NAZIV ELEMENTA U KORPUSU,NAZIV KORPUSA,DUŽINA (Smjer goda) mm,ŠIRINA mm,KOM.,DUPLA PLOČA,ABS 2mm - DUŽINA (Prednji rub),ABS 2mm - DUŽINA (Stražnji rub),ABS 2mm - ŠIRINA (Lijevi rub),ABS 2mm - ŠIRINA (Desni rub),ABS 1mm - DUŽINA (Prednji rub),ABS 1mm - DUŽINA (Stražnji rub),ABS 1mm - ŠIRINA (Lijevi rub),ABS 1mm - ŠIRINA (Desni rub),ABS 0.5mm - DUŽINA (Prednji rub),ABS 0.5mm - DUŽINA (Stražnji rub),ABS 0.5mm - ŠIRINA (Lijevi rub),ABS 0.5mm - ŠIRINA (Desni rub),UTOR/LIMBEL,UKOP ZA BRITVELE,NAPOMENA\n"
+
+  let index = 1;
+  $cabinets.forEach(cab => {
+    cab.panels().forEach((p: Panel) => {
+      csv += [
+             index,
+             p.material,
+             p.materialThickness,
+             p.label.split("->")[1],
+             p.label.split("->")[0],
+             p.length,
+             p.width,
+              p.quantity,
+             'NE',
+             '', //ABS 2mm
+             '', //ABS 2mm
+             '', //ABS 2mm
+             '', //ABS 2mm
+            p.edgeBandingLengthRight,
+            p.edgeBandingLengthLeft,
+            p.edgeBandingWidthBottom,
+            p.edgeBandingWidthTop,
+            '', //ABS 0.5mm
+            '', //ABS 0.5mm
+            '', //ABS 0.5mm
+            '', //ABS 0.5mm,
+            '', //limbel TBD,
+            p.hingeLocation,
+              ''
+      ].join(",") + "\n";
+
+      index++;
+    })
+  });
+
+  return csv
+
+}
+
   let showForm = false;
   let showMaterialForm = false;
   let showSummary = false;

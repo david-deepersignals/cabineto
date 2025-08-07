@@ -1,4 +1,6 @@
 import {Corpus, type CorpusOptions, type Panel} from "./Corpus";
+import { get } from 'svelte/store';
+import { materials } from '../stores/materials';
 
 export class DoorCabinet extends Corpus{
     doors?: number;
@@ -25,10 +27,11 @@ export class DoorCabinet extends Corpus{
         if(this.doors === undefined) {
             return data;
         }
+        const { front } = get(materials);
         const totalReveal = (this.doors === 1) ? 4 : 6;
         const dw = (this.w - totalReveal) / this.doors;
         const dh = this.h - 4;
-        const hinge = dh > dw ? "duza strana" : "kraca strana";
+        const hinge = dh > dw ? "2xDUZ" : "2xSIR";
         for (let i = 0; i < this.doors; i++) {
             data.push({
                 length: dh,
@@ -38,8 +41,10 @@ export class DoorCabinet extends Corpus{
                 edgeBandingLengthLeft: 1,
                 edgeBandingWidthBottom: 1,
                 edgeBandingWidthTop: 1,
-                label: `${this.id}- Door`,
+                label: `${this.id}-> Door`,
                 hingeLocation: hinge,
+                material: front.name,
+                materialThickness: front.thickness,
             });
         }
 

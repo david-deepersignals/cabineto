@@ -25,7 +25,7 @@ export class OvenCabinet extends Corpus {
 
     public panels(): Panel[] {
         const data = super.panels();
-        const { corpus, back } = get(materials);
+        const { corpus, back, front } = get(materials);
         const t = corpus.thickness;
         const drawerWidth = this.w - 2 * t;
         const drawerDepth = this.d - back.thickness;
@@ -41,8 +41,10 @@ export class OvenCabinet extends Corpus {
             edgeBandingLengthLeft: 1,
             edgeBandingWidthBottom: 1,
             edgeBandingWidthTop: 1,
-            label: `${this.id}- Drawer Face`,
+            label: `${this.id}-> Drawer Face`,
             hingeLocation: "",
+            material: front.name,
+            materialThickness: front.thickness,
         });
         data.push({
             length: internalHeight,
@@ -52,8 +54,10 @@ export class OvenCabinet extends Corpus {
             edgeBandingLengthLeft: 0,
             edgeBandingWidthBottom: 0,
             edgeBandingWidthTop: 1,
-            label: `${this.id}- Drawer Side`,
+            label: `${this.id}-> Drawer Side`,
             hingeLocation: "",
+            material: corpus.name,
+            materialThickness: corpus.thickness,
         });
         data.push({
             length: internalHeight,
@@ -63,8 +67,10 @@ export class OvenCabinet extends Corpus {
             edgeBandingLengthLeft: 0,
             edgeBandingWidthBottom: 0,
             edgeBandingWidthTop: 1,
-            label: `${this.id}- Drawer Back`,
+            label: `${this.id}-> Drawer Back`,
             hingeLocation: "",
+            material: corpus.name,
+            materialThickness: corpus.thickness,
         });
         data.push({
             length: innerW,
@@ -74,8 +80,10 @@ export class OvenCabinet extends Corpus {
             edgeBandingLengthLeft: 0,
             edgeBandingWidthBottom: 0,
             edgeBandingWidthTop: 0,
-            label: `${this.id}- Drawer Bottom`,
+            label: `${this.id}-> Drawer Bottom`,
             hingeLocation: "",
+            material: back.name,
+            materialThickness: back.thickness,
         });
 
         data.push({
@@ -86,8 +94,10 @@ export class OvenCabinet extends Corpus {
             edgeBandingLengthLeft: 0,
             edgeBandingWidthBottom: 0,
             edgeBandingWidthTop: 0,
-            label: `${this.id}- Oven Shelf`,
+            label: `${this.id}-> Oven Shelf`,
             hingeLocation: "",
+            material: corpus.name,
+            materialThickness: corpus.thickness,
         });
 
         return data;

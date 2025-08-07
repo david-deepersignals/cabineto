@@ -16,6 +16,8 @@ export interface Panel {
     edgeBandingWidthTop: number;
     label: string;
     hingeLocation: string;
+    material: string;
+    materialThickness: number;
 }
 
 export abstract class Corpus {
@@ -40,7 +42,7 @@ export abstract class Corpus {
     abstract validate(): boolean;
 
     public panels(): Panel[] {
-        const { corpus } = get(materials);
+        const { corpus, back } = get(materials);
         const t = corpus.thickness;
         const data: Panel[] = [];
         data.push({
@@ -51,8 +53,10 @@ export abstract class Corpus {
             edgeBandingLengthLeft: 0,
             edgeBandingWidthBottom: 0,
             edgeBandingWidthTop: 1,
-            label: `${this.id}- Side panel`,
-            hingeLocation: ""
+            label: `${this.id}-> Side panel`,
+            hingeLocation: "",
+            material: corpus.name,
+            materialThickness: corpus.thickness,
         });
 
         if (this.options?.full) {
@@ -64,8 +68,10 @@ export abstract class Corpus {
                 edgeBandingLengthLeft: 1,
                 edgeBandingWidthBottom: 0,
                 edgeBandingWidthTop: 0,
-                label: `${this.id}- Top/Bottom panel`,
-                hingeLocation: ""
+                label: `${this.id}-> Top/Bottom panel`,
+                hingeLocation: "",
+                material: corpus.name,
+                materialThickness: corpus.thickness,
             });
         } else {
             data.push({
@@ -76,8 +82,10 @@ export abstract class Corpus {
                 edgeBandingLengthLeft: 0,
                 edgeBandingWidthBottom: 0,
                 edgeBandingWidthTop: 0,
-                label: `${this.id}- Bottom panel`,
-                hingeLocation: ""
+                label: `${this.id}-> Bottom panel`,
+                hingeLocation: "",
+                material: corpus.name,
+                materialThickness: corpus.thickness,
             });
             data.push({
                 length: this.w - 2 * t,
@@ -87,8 +95,10 @@ export abstract class Corpus {
                 edgeBandingLengthLeft: 0,
                 edgeBandingWidthBottom: 0,
                 edgeBandingWidthTop: 0,
-                label: `${this.id}- Top panel plank rear`,
-                hingeLocation: ""
+                label: `${this.id}-> Top panel plank rear`,
+                hingeLocation: "",
+                material: corpus.name,
+                materialThickness: corpus.thickness,
             });
             data.push({
                 length: this.w - 2 * t,
@@ -98,8 +108,10 @@ export abstract class Corpus {
                 edgeBandingLengthLeft: 1,
                 edgeBandingWidthBottom: 0,
                 edgeBandingWidthTop: 0,
-                label: `${this.id}- Top panel plank front`,
-                hingeLocation: ""
+                label: `${this.id}-> Top panel plank front`,
+                hingeLocation: "",
+                material: corpus.name,
+                materialThickness: corpus.thickness,
             });
         }
 
@@ -112,8 +124,10 @@ export abstract class Corpus {
                 edgeBandingLengthLeft: 0,
                 edgeBandingWidthBottom: 0,
                 edgeBandingWidthTop: 0,
-                label: `${this.id}- Back panel`,
-                hingeLocation: ""
+                label: `${this.id}-> Back panel`,
+                hingeLocation: "",
+                material: back.name,
+                materialThickness: back.thickness,
             });
         } else {
             data.push({
@@ -124,8 +138,10 @@ export abstract class Corpus {
                 edgeBandingLengthLeft: 0,
                 edgeBandingWidthBottom: 0,
                 edgeBandingWidthTop: 0,
-                label: `${this.id}- Back panel`,
-                hingeLocation: ""
+                label: `${this.id}-> Back panel`,
+                hingeLocation: "",
+                material: back.name,
+                materialThickness: back.thickness,
             });
         }
 

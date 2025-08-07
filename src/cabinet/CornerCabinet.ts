@@ -1,4 +1,6 @@
 import { Corpus, type CorpusOptions, type Panel } from "./Corpus";
+import { get } from 'svelte/store';
+import { materials } from '../stores/materials';
 
 export class CornerCabinet extends Corpus {
     fixedSide: number;
@@ -24,7 +26,8 @@ export class CornerCabinet extends Corpus {
         const doorWidth = this.w - this.fixedSide - 4;
         const doorHeight = this.h - 4;
         if (doorWidth > 0) {
-            const hinge = doorHeight > doorWidth ? "duza strana" : "kraca strana";
+            const { front } = get(materials);
+            const hinge = doorHeight > doorWidth ? "2xDUZ" : "2xSIR";
             data.push({
                 length: doorHeight,
                 width: doorWidth,
@@ -33,8 +36,10 @@ export class CornerCabinet extends Corpus {
                 edgeBandingLengthLeft: 1,
                 edgeBandingWidthBottom: 1,
                 edgeBandingWidthTop: 1,
-                label: `${this.id}- Door`,
+                label: `${this.id}-> Door`,
                 hingeLocation: hinge,
+                material: front.name,
+                materialThickness: front.thickness,
             });
         }
         return data;

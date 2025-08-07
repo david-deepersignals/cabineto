@@ -1,6 +1,7 @@
 import { writable } from 'svelte/store';
 
 export interface Material {
+  name: string;
   thickness: number;
 }
 
@@ -14,7 +15,7 @@ export interface MaterialsState {
  * Global material configuration with default thickness values.
  */
 export const materials = writable<MaterialsState>({
-  corpus: { thickness: 18 },
-  front: { thickness: 19 },
-  back: { thickness: 3 }
+  corpus: { name: 'Corpus', thickness: 18 },
+  front: { name: 'Front', thickness: 19 },
+  back: { name: 'Back', thickness: 3 }
 });

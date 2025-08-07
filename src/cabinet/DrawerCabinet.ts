@@ -38,7 +38,7 @@ export class DrawerCabinet extends Corpus{
         if(this.drawers === undefined || this.heights === undefined) {
             return data;
         }
-        const { corpus, back } = get(materials);
+        const { corpus, back, front } = get(materials);
         const t = corpus.thickness;
         const usableHeight = this.h - ((this.drawers + 1) * 2);
         const drawerWidth = this.w - 2 * t;
@@ -60,8 +60,10 @@ export class DrawerCabinet extends Corpus{
                 edgeBandingLengthLeft: 1,
                 edgeBandingWidthBottom: 1,
                 edgeBandingWidthTop: 1,
-                label: `${this.id}- Drawer ${i + 1} Face`,
+                label: `${this.id}-> Drawer ${i + 1} Face`,
                 hingeLocation: "",
+                material: front.name,
+                materialThickness: front.thickness,
             });
             data.push({
                 length: internalHeight,
@@ -71,8 +73,10 @@ export class DrawerCabinet extends Corpus{
                 edgeBandingLengthLeft: 0,
                 edgeBandingWidthBottom: 0,
                 edgeBandingWidthTop: 1,
-                label: `${this.id}- Drawer ${i + 1} Side`,
+                label: `${this.id}-> Drawer ${i + 1} Side`,
                 hingeLocation: "",
+                material: corpus.name,
+                materialThickness: corpus.thickness,
             });
             data.push({
                 length: internalHeight,
@@ -82,8 +86,10 @@ export class DrawerCabinet extends Corpus{
                 edgeBandingLengthLeft: 0,
                 edgeBandingWidthBottom: 0,
                 edgeBandingWidthTop: 1,
-                label: `${this.id}- Drawer ${i + 1} Back`,
+                label: `${this.id}-> Drawer ${i + 1} Back`,
                 hingeLocation: "",
+                material: corpus.name,
+                materialThickness: corpus.thickness,
             });
             data.push({
                 length: innerW,
@@ -93,8 +99,10 @@ export class DrawerCabinet extends Corpus{
                 edgeBandingLengthLeft: 0,
                 edgeBandingWidthBottom: 0,
                 edgeBandingWidthTop: 0,
-                label: `${this.id}- Drawer ${i + 1} Bottom`,
+                label: `${this.id}-> Drawer ${i + 1} Bottom`,
                 hingeLocation: "",
+                material: back.name,
+                materialThickness: back.thickness,
             });
 
             cumulativeY += faceHeight + 2;

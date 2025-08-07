@@ -1,6 +1,11 @@
 <script lang="ts">
 import { createEventDispatcher } from 'svelte';
 import { cabinets } from '../stores/cabinets';
+import type { Corpus } from '../cabinet/Corpus';
+import { DoorCabinet } from '../cabinet/DoorCabinet';
+import { DrawerCabinet } from '../cabinet/DrawerCabinet';
+import { CornerCabinet } from '../cabinet/CornerCabinet';
+import { OvenCabinet } from '../cabinet/OvenCabinet';
 
 const dispatch = createEventDispatcher();
 
@@ -15,6 +20,52 @@ function downloadJSON() {
   URL.revokeObjectURL(url);
 }
 
+function reviveCabinet(raw: any): Corpus {
+  let cab: Corpus;
+  switch (raw.type) {
+    case 'drawer':
+      cab = new DrawerCabinet(
+        raw.id,
+        raw.w,
+        raw.h,
+        raw.d,
+        raw.drawers,
+        raw.heights ?? [],
+        raw.clearance,
+        raw.options
+      );
+      break;
+    case 'corner':
+      cab = new CornerCabinet(
+        raw.id,
+        raw.w,
+        raw.h,
+        raw.d,
+        raw.fixedSide,
+        raw.options
+      );
+      break;
+    case 'oven':
+      cab = new OvenCabinet(
+        raw.id,
+        raw.w,
+        raw.h,
+        raw.d,
+        raw.clearance,
+        raw.options
+      );
+      break;
+    case 'door':
+    default:
+      cab = new DoorCabinet(raw.id, raw.w, raw.h, raw.d, raw.doors, raw.options);
+      break;
+  }
+  cab.x = raw.x;
+  cab.y = raw.y;
+  cab.validate();
+  return cab;
+}
+
 function uploadJSON(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files && input.files[0];
@@ -23,7 +74,8 @@ function uploadJSON(event: Event) {
   reader.onload = () => {
     try {
       const data = JSON.parse(reader.result as string);
-      cabinets.set(data);
+      const restored: Corpus[] = Array.isArray(data) ? data.map(reviveCabinet) : [];
+      cabinets.set(restored);
       dispatch('close');
     } catch (e) {
       alert('Invalid JSON file');

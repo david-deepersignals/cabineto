@@ -11,6 +11,7 @@
 
     export let cabinet: Corpus | null = null;
 
+    let createDuplicate = false;
     let width = '10';
     let height = '10';
     let depth = '10';
@@ -63,6 +64,10 @@
             return;
         }
 
+        if(createDuplicate){
+            cabinet = null
+            x = x + w + 20;
+        }
         const id = cabinet ? cabinet.id : `CAB-${$cabinets.length + 1}`;
 
 
@@ -121,7 +126,7 @@
         newCabinet.y = y
         newCabinet.x = x
         newCabinet.validate()
-        if (cabinet) {
+        if (cabinet && cabinet !== null) {
             cabinets.update(prev => prev.map(c => c.id === cabinet.id ? newCabinet : c));
         } else {
             cabinets.update(prev => [...prev, newCabinet]);
@@ -134,6 +139,11 @@
     <div class="bg-white p-6 rounded shadow-md w-full max-w-sm">
         <h3 class="text-lg font-semibold mb-4">{cabinet ? 'Edit Cabinet' : 'Add Cabinet'}</h3>
         <div class="space-y-2">
+            {#if cabinet}
+            <label class="block">Duplicate:
+                <input type="checkbox" bind:checked={createDuplicate} class="border p-1 w-full" />
+            </label>
+                {/if}
             <label class="block">Width (cm):
                 <input type="number" bind:value={width} class="border p-1 w-full" required />
             </label>

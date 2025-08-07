@@ -14,7 +14,20 @@ let layout: HTMLDivElement;
 $: layoutWidth = layoutWidthMm;
 $: layoutHeight = layoutHeightMm;
 
+const downloadJSON = () => {
+  const json = JSON.stringify($cabinets, null, 2);
+  const blob = new Blob([json], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "cabinets.json";  // Specify the file name
+  a.click();
+};
   const downloadCSV = () => {
+
+
+
+    
     let csv = "1. dimension (mm),2. dimension (mm),quantity,edge banding right,edge banding left,edge banding bottom,edge banding top,label,hinge location\n";
 
     $cabinets.forEach(cab => {

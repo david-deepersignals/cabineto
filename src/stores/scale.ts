@@ -2,7 +2,7 @@ import { writable } from 'svelte/store';
 import { cabinets } from './cabinets';
 
 function createScale() {
-  const { subscribe, update } = writable(1);
+  const { subscribe, update } = writable(2.5);
 
   return {
     subscribe,

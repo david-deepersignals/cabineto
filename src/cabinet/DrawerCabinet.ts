@@ -1,4 +1,4 @@
-import { Corpus, type CorpusOptions } from "./Corpus";
+import { Corpus, type CorpusOptions, type Panel } from "./Corpus";
 import { get } from 'svelte/store';
 import { materials } from '../stores/materials';
 
@@ -33,7 +33,7 @@ export class DrawerCabinet extends Corpus{
         return true;
     }
 
-    public panels(): any[] {
+    public panels(): Panel[] {
         const data = super.panels();
         if(this.drawers === undefined || this.heights === undefined) {
             return data;
@@ -52,10 +52,50 @@ export class DrawerCabinet extends Corpus{
             const innerW = drawerWidth - 2 * clr;
             const innerD = drawerDepth;
 
-            data.push([faceHeight, drawerWidth, 1, 1, 1, 1, 1, `${this.id}- Drawer ${i + 1} Face`, ""]);
-            data.push([internalHeight, innerD, 2, 1, 0, 0, 1, `${this.id}- Drawer ${i + 1} Side`, ""]);
-            data.push([internalHeight, innerD, 1, 0, 0, 0, 0, `${this.id}- Drawer ${i + 1} Back`, ""]);
-            data.push([innerW, innerD, 1, 0, 0, 0, 0, `${this.id}- Drawer ${i + 1} Bottom`, ""]);
+            data.push({
+                length: faceHeight,
+                width: drawerWidth,
+                quantity: 1,
+                edgeBandingLengthRight: 1,
+                edgeBandingLengthLeft: 1,
+                edgeBandingWidthBottom: 1,
+                edgeBandingWidthTop: 1,
+                label: `${this.id}- Drawer ${i + 1} Face`,
+                hingeLocation: "",
+            });
+            data.push({
+                length: internalHeight,
+                width: innerD,
+                quantity: 2,
+                edgeBandingLengthRight: 1,
+                edgeBandingLengthLeft: 0,
+                edgeBandingWidthBottom: 0,
+                edgeBandingWidthTop: 1,
+                label: `${this.id}- Drawer ${i + 1} Side`,
+                hingeLocation: "",
+            });
+            data.push({
+                length: internalHeight,
+                width: innerW,
+                quantity: 1,
+                edgeBandingLengthRight: 0,
+                edgeBandingLengthLeft: 0,
+                edgeBandingWidthBottom: 0,
+                edgeBandingWidthTop: 1,
+                label: `${this.id}- Drawer ${i + 1} Back`,
+                hingeLocation: "",
+            });
+            data.push({
+                length: innerW,
+                width: innerD,
+                quantity: 1,
+                edgeBandingLengthRight: 0,
+                edgeBandingLengthLeft: 0,
+                edgeBandingWidthBottom: 0,
+                edgeBandingWidthTop: 0,
+                label: `${this.id}- Drawer ${i + 1} Bottom`,
+                hingeLocation: "",
+            });
 
             cumulativeY += faceHeight + 2;
         }

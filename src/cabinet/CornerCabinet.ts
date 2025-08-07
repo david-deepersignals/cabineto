@@ -1,4 +1,4 @@
-import { Corpus, type CorpusOptions } from "./Corpus";
+import { Corpus, type CorpusOptions, type Panel } from "./Corpus";
 
 export class CornerCabinet extends Corpus {
     fixedSide: number;
@@ -19,13 +19,23 @@ export class CornerCabinet extends Corpus {
         return this.fixedSide > 0 && this.fixedSide < this.w;
     }
 
-    public panels(): any[] {
+    public panels(): Panel[] {
         const data = super.panels();
         const doorWidth = this.w - this.fixedSide - 4;
         const doorHeight = this.h - 4;
         if (doorWidth > 0) {
             const hinge = doorHeight > doorWidth ? "duza strana" : "kraca strana";
-            data.push([doorHeight, doorWidth, 1, 1, 1, 1, 1, `${this.id}- Door`, hinge]);
+            data.push({
+                length: doorHeight,
+                width: doorWidth,
+                quantity: 1,
+                edgeBandingLengthRight: 1,
+                edgeBandingLengthLeft: 1,
+                edgeBandingWidthBottom: 1,
+                edgeBandingWidthTop: 1,
+                label: `${this.id}- Door`,
+                hingeLocation: hinge,
+            });
         }
         return data;
     }

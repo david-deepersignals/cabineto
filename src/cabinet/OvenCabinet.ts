@@ -1,4 +1,4 @@
-import { Corpus, type CorpusOptions } from "./Corpus";
+import { Corpus, type CorpusOptions, type Panel } from "./Corpus";
 import { get } from 'svelte/store';
 import { materials } from '../stores/materials';
 
@@ -23,7 +23,7 @@ export class OvenCabinet extends Corpus {
         return this.w === 600 && this.d >= 560 && this.drawerHeight >= 140;
     }
 
-    public panels(): any[] {
+    public panels(): Panel[] {
         const data = super.panels();
         const { corpus, back } = get(materials);
         const t = corpus.thickness;
@@ -33,12 +33,62 @@ export class OvenCabinet extends Corpus {
         const innerD = drawerDepth;
         const internalHeight = this.drawerHeight - 4;
 
-        data.push([this.drawerHeight, drawerWidth, 1, 1, 1, 1, 1, `${this.id}- Drawer Face`, ""]);
-        data.push([internalHeight, innerD, 2, 1, 0, 0, 1, `${this.id}- Drawer Side`, ""]);
-        data.push([internalHeight, innerD, 1, 0, 0, 0, 0, `${this.id}- Drawer Back`, ""]);
-        data.push([innerW, innerD, 1, 0, 0, 0, 0, `${this.id}- Drawer Bottom`, ""]);
+        data.push({
+            length: this.drawerHeight,
+            width: drawerWidth,
+            quantity: 1,
+            edgeBandingLengthRight: 1,
+            edgeBandingLengthLeft: 1,
+            edgeBandingWidthBottom: 1,
+            edgeBandingWidthTop: 1,
+            label: `${this.id}- Drawer Face`,
+            hingeLocation: "",
+        });
+        data.push({
+            length: internalHeight,
+            width: innerD,
+            quantity: 2,
+            edgeBandingLengthRight: 1,
+            edgeBandingLengthLeft: 0,
+            edgeBandingWidthBottom: 0,
+            edgeBandingWidthTop: 1,
+            label: `${this.id}- Drawer Side`,
+            hingeLocation: "",
+        });
+        data.push({
+            length: internalHeight,
+            width: innerW,
+            quantity: 1,
+            edgeBandingLengthRight: 0,
+            edgeBandingLengthLeft: 0,
+            edgeBandingWidthBottom: 0,
+            edgeBandingWidthTop: 1,
+            label: `${this.id}- Drawer Back`,
+            hingeLocation: "",
+        });
+        data.push({
+            length: innerW,
+            width: innerD,
+            quantity: 1,
+            edgeBandingLengthRight: 0,
+            edgeBandingLengthLeft: 0,
+            edgeBandingWidthBottom: 0,
+            edgeBandingWidthTop: 0,
+            label: `${this.id}- Drawer Bottom`,
+            hingeLocation: "",
+        });
 
-        data.push([drawerWidth, this.d, 1, 1, 0, 0, 0, `${this.id}- Oven Shelf`, ""]);
+        data.push({
+            length: drawerWidth,
+            width: this.d,
+            quantity: 1,
+            edgeBandingLengthRight: 1,
+            edgeBandingLengthLeft: 0,
+            edgeBandingWidthBottom: 0,
+            edgeBandingWidthTop: 0,
+            label: `${this.id}- Oven Shelf`,
+            hingeLocation: "",
+        });
 
         return data;
     }

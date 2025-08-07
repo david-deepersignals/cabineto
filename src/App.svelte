@@ -4,7 +4,7 @@ import MaterialForm from "./components/MaterialForm.svelte";
 import LayoutSummary from "./components/LayoutSummary.svelte";
 import { cabinets } from './stores/cabinets';
 import { scale } from './stores/scale';
-import type { Corpus } from './cabinet/Corpus';
+import type { Corpus, Panel } from './cabinet/Corpus';
 
 const GRID_SIZE = 10;
 const layoutWidthMm = 1000;
@@ -28,12 +28,21 @@ const downloadJSON = () => {
 
 
     
-    let csv = "1. dimension (mm),2. dimension (mm),quantity,edge banding right,edge banding left,edge banding bottom,edge banding top,label,hinge location\n";
+    let csv = "length (mm),width (mm),quantity,edge banding length right,edge banding length left,edge banding width bottom,edge banding width top,label,hinge location\n";
 
     $cabinets.forEach(cab => {
-      console.log(cab);
-      cab.panels().forEach(p => {
-        csv += p.join(",") + "\n";
+      cab.panels().forEach((p: Panel) => {
+        csv += [
+          p.length,
+          p.width,
+          p.quantity,
+          p.edgeBandingLengthRight,
+          p.edgeBandingLengthLeft,
+          p.edgeBandingWidthBottom,
+          p.edgeBandingWidthTop,
+          p.label,
+          p.hingeLocation
+        ].join(",") + "\n";
       })
     });
 

@@ -1,4 +1,4 @@
-import {Corpus} from "./Corpus";
+import {Corpus, type Panel} from "./Corpus";
 
 export class UpperCabinet extends Corpus{
     doors?: number;
@@ -18,7 +18,7 @@ export class UpperCabinet extends Corpus{
         return this.doors !== undefined && this.doors > 0;
     }
 
-    public panels(): any[] {
+    public panels(): Panel[] {
         const data = super.panels();
         if(this.doors === undefined) {
             return data;
@@ -28,7 +28,17 @@ export class UpperCabinet extends Corpus{
         const dh = this.h - 4;
         const hinge = dh > dw ? "duza strana" : "kraca strana";
         for (let i = 0; i < this.doors; i++) {
-            data.push([dh, dw, 1, 1, 1, 1, 1, `${this.id}- Door`, hinge]);
+            data.push({
+                length: dh,
+                width: dw,
+                quantity: 1,
+                edgeBandingLengthRight: 1,
+                edgeBandingLengthLeft: 1,
+                edgeBandingWidthBottom: 1,
+                edgeBandingWidthTop: 1,
+                label: `${this.id}- Door`,
+                hingeLocation: hinge,
+            });
         }
 
         return data;

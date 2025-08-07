@@ -31,8 +31,8 @@
             width = (cabinet.w / 10).toString();
             height = (cabinet.h / 10).toString();
             depth = (cabinet.d / 10).toString();
-            x = cabinet.x
-            y = cabinet.y
+            x = cabinet.x ?? 0;
+            y = cabinet.y ?? 0;
             type = cabinet.type ?? 'door';
             fullCorpus = cabinet.options?.full ?? false;
             insetBack = cabinet.options?.insetBack ?? false;
@@ -64,11 +64,12 @@
             return;
         }
 
+        const existingCabinet = cabinet;
         if(createDuplicate){
-            cabinet = null
+            cabinet = null;
             x = x + w + 20;
         }
-        const id = cabinet ? cabinet.id : `CAB-${$cabinets.length + 1}`;
+        const id = existingCabinet ? existingCabinet.id : `CAB-${$cabinets.length + 1}`;
 
 
         let newCabinet;
@@ -123,11 +124,11 @@
             return;
         }
 
-        newCabinet.y = y
-        newCabinet.x = x
-        newCabinet.validate()
-        if (cabinet && cabinet !== null) {
-            cabinets.update(prev => prev.map(c => c.id === cabinet.id ? newCabinet : c));
+        newCabinet.y = y;
+        newCabinet.x = x;
+        newCabinet.validate();
+        if (existingCabinet) {
+            cabinets.update(prev => prev.map(c => c.id === existingCabinet.id ? newCabinet : c));
         } else {
             cabinets.update(prev => [...prev, newCabinet]);
         }

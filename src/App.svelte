@@ -13,6 +13,77 @@ let layoutWidthMm = 1000;
 let layoutHeightMm = 500;
 let layout: HTMLDivElement;
 
+type View = 'top' | 'front' | 'side';
+let view: View = 'top';
+
+function getAxes(v: View) {
+  switch (v) {
+    case 'front':
+      return { left: 'x', top: 'z', width: 'w', height: 'h' } as const;
+    case 'side':
+      return { left: 'y', top: 'z', width: 'd', height: 'h' } as const;
+    default:
+      return { left: 'x', top: 'y', width: 'w', height: 'd' } as const;
+  }
+}
+
+function viewChange(v: View){
+  view = v
+  cabinets.update(cabs => [...cabs]);
+}
+
+$: axes = getAxes(view);
+
+function getOrientedDims(cab: any) {
+  return cab.rotation === 90 ? { w: cab.d, d: cab.w } : { w: cab.w, d: cab.d };
+}
+
+function getCabinetWidthRaw(cab: any) {
+  const dims = getOrientedDims(cab);
+  return axes.width === 'w' ? dims.w : dims.d;
+}
+
+function getCabinetHeightRaw(cab: any) {
+  if (axes.height === 'h') return cab.h;
+  const dims = getOrientedDims(cab);
+  return dims.d;
+}
+
+function getCabinetWidth(cab: any) {
+  return getCabinetWidthRaw(cab) / $scale;
+}
+
+function getCabinetHeight(cab: any) {
+  return getCabinetHeightRaw(cab) / $scale;
+}
+
+function getCabinetLeft(cab: any) {
+  if (view === 'side') {
+    const w = getCabinetWidth(cab);
+    return layoutWidth - (cab.y ?? 0) - w;
+  }
+  return cab[axes.left] ?? 0;
+}
+
+function setCabinetLeft(cab: any, left: number, w: number) {
+  if (view === 'side') {
+    cab.y = layoutWidth - left - w;
+  } else {
+    cab[axes.left] = left;
+  }
+}
+
+function isAligned(cab: any) {
+  if (view === 'front') {
+    return Math.abs(cab.y ?? 0) < GRID_SIZE / 2;
+  }
+  if (view === 'side') {
+    const w = getCabinetWidth(cab);
+    return Math.abs((cab.x ?? 0) + w - layoutWidth) < GRID_SIZE / 2;
+  }
+  return true;
+}
+
 function updateLayoutSize() {
   layoutWidthMm = window.innerWidth - 100;
   layoutHeightMm = window.innerHeight - 250;
@@ -60,6 +131,22 @@ let showForm = false;
     cabinets.update(cabs => cabs.filter(c => c.id !== id));
   };
 
+  const rotateCabinet = (id: string) => {
+    cabinets.update(current => {
+      const index = current.findIndex(c => c.id === id);
+      if (index !== -1) {
+        const cab: any = current[index];
+        cab.rotation = cab.rotation === 90 ? 0 : 90;
+        const w = getCabinetWidth(cab);
+        const h = getCabinetHeight(cab);
+        cab.x = Math.max(0, Math.min(layoutWidth - w, cab.x ?? 0));
+        cab.y = Math.max(0, Math.min(layoutHeight - h, cab.y ?? 0));
+        current[index] = cab;
+      }
+      return [...current];
+    });
+  };
+
   const zoomIn = () => scale.update(s => Math.max(0.5, s - 0.5));
   const zoomOut = () => scale.update(s => s + 0.5);
 
@@ -97,25 +184,23 @@ let showForm = false;
   function handleDrag(event: MouseEvent) {
     if (!dragInfo.isDragging || dragInfo.targetId === null) return;
 
-    // Calculate current position based on cursor and offset, relative to the layout
-    let x = event.clientX - dragInfo.layoutLeft - dragInfo.offsetX;
-    let y = event.clientY - dragInfo.layoutTop - dragInfo.offsetY;
+    let left = event.clientX - dragInfo.layoutLeft - dragInfo.offsetX;
+    let top = event.clientY - dragInfo.layoutTop - dragInfo.offsetY;
 
     const index = $cabinets.findIndex((cab) => cab.id === dragInfo.targetId);
-    const currentCab = $cabinets[index];
-    const w = currentCab?.w ? currentCab.w / $scale : 0;
-    const h = currentCab?.h ? currentCab.h / $scale : 0;
-    x = Math.max(0, Math.min(layoutWidth - w, x));
-    y = Math.max(0, Math.min(layoutHeight - h, y));
+    const currentCab: any = $cabinets[index];
+    const w = getCabinetWidth(currentCab);
+    const h = getCabinetHeight(currentCab);
+    left = Math.max(0, Math.min(layoutWidth - w, left));
+    top = Math.max(0, Math.min(layoutHeight - h, top));
 
-    // Update cabinet position in store
     cabinets.update((current) => {
-      const index = current.findIndex((cab) => cab.id === dragInfo.targetId);
-      if (index !== -1) {
-        const currentCab = current[index];
-        currentCab.x = x;
-        currentCab.y = y;
-        current[index] = currentCab;
+      const i = current.findIndex((cab) => cab.id === dragInfo.targetId);
+      if (i !== -1) {
+        const cab: any = current[i];
+        setCabinetLeft(cab, left, w);
+        cab[axes.top] = top;
+        current[i] = cab;
       }
       return [...current];
     });
@@ -128,12 +213,12 @@ let showForm = false;
       const index = current.findIndex((cab) => cab.id === dragInfo.targetId);
       if (index === -1) return current;
 
-      const draggedCabinet = current[index];
-      let finalLeft = Math.round(((draggedCabinet.x ?? 0) / GRID_SIZE)) * GRID_SIZE;
-      let finalTop = Math.round(((draggedCabinet.y ?? 0) / GRID_SIZE)) * GRID_SIZE;
+      const draggedCabinet: any = current[index];
+      let finalLeft = Math.round(((draggedCabinet[axes.left] ?? 0) / GRID_SIZE)) * GRID_SIZE;
+      let finalTop = Math.round(((draggedCabinet[axes.top] ?? 0) / GRID_SIZE)) * GRID_SIZE;
 
-      const w = draggedCabinet.w / $scale || 100;
-      const h = draggedCabinet.h / $scale || 100;
+      const w = getCabinetWidth(draggedCabinet) || 100;
+      const h = getCabinetHeight(draggedCabinet) || 100;
 
       finalLeft = Math.max(0, Math.min(layoutWidth - w, finalLeft));
       finalTop = Math.max(0, Math.min(layoutHeight - h, finalTop));
@@ -149,14 +234,14 @@ let showForm = false;
       let bestSnap = null;
 
       // Check for collisions
-      current.forEach((otherCabinet, i) => {
+      current.forEach((otherCabinet: any, i) => {
         if (i === index) return;
 
         const rect2 = {
-          x: otherCabinet.x ?? 0,
-          y: otherCabinet.y ?? 0,
-          w: otherCabinet.w / $scale || 100,
-          h: otherCabinet.h / $scale || 100
+          x: otherCabinet[axes.left] ?? 0,
+          y: otherCabinet[axes.top] ?? 0,
+          w: getCabinetWidth(otherCabinet) || 100,
+          h: getCabinetHeight(otherCabinet) || 100
         };
 
         if (
@@ -189,10 +274,10 @@ let showForm = false;
               if (j === index || j === i) return false;
 
             const rect3 = {
-                x: other2.x ?? 0,
-                y: other2.y ?? 0,
-                w: other2.w || 100,
-                h: other2.h || 100
+                x: other2[axes.left] ?? 0,
+                y: other2[axes.top] ?? 0,
+                w: getCabinetWidth(other2) || 100,
+                h: getCabinetHeight(other2) || 100
               };
 
               return (
@@ -213,12 +298,12 @@ let showForm = false;
 
       // Update cabinet position based on collision resolution
       if (!collision || bestSnap === null) {
-        draggedCabinet.x = finalLeft;
-        draggedCabinet.y = finalTop;
+        draggedCabinet[axes.left] = finalLeft;
+        draggedCabinet[axes.top] = finalTop;
         current[index] = draggedCabinet;
       } else {
-        draggedCabinet.x = bestSnap[0];
-        draggedCabinet.y = bestSnap[1];
+        draggedCabinet[axes.left] = bestSnap[0];
+        draggedCabinet[axes.top] = bestSnap[1];
         current[index] = draggedCabinet;
       }
 
@@ -241,24 +326,28 @@ let showForm = false;
   $: depthMismatch = new Set<string>();
   $: {
     depthMismatch.clear();
-    const list = $cabinets;
-    for (let i = 0; i < list.length; i++) {
-      const a = list[i];
-      const aw = a.w / $scale;
-      const ah = a.h / $scale;
-      const ax = a.x ?? 0;
-      const ay = a.y ?? 0;
-      for (let j = i + 1; j < list.length; j++) {
-        const b = list[j];
-        const bw = b.w / $scale;
-        const bh = b.h / $scale;
-        const bx = b.x ?? 0;
-        const by = b.y ?? 0;
-        const verticalOverlap = ay < by + bh && by < ay + ah;
-        const touching = Math.abs(ax + aw - bx) < 1 || Math.abs(bx + bw - ax) < 1;
-        if (verticalOverlap && touching && a.d !== b.d) {
-          depthMismatch.add(a.id);
-          depthMismatch.add(b.id);
+    if (view === 'top') {
+      const list = $cabinets;
+      for (let i = 0; i < list.length; i++) {
+        const a: any = list[i];
+        const aw = getCabinetWidth(a);
+        const ah = getCabinetHeight(a);
+        const adepth = a.rotation === 90 ? a.w : a.d;
+        const ax = a.x ?? 0;
+        const ay = a.y ?? 0;
+        for (let j = i + 1; j < list.length; j++) {
+          const b: any = list[j];
+          const bw = getCabinetWidth(b);
+          const bh = getCabinetHeight(b);
+          const bdepth = b.rotation === 90 ? b.w : b.d;
+          const bx = b.x ?? 0;
+          const by = b.y ?? 0;
+          const verticalOverlap = ay < by + bh && by < ay + ah;
+          const touching = Math.abs(ax + aw - bx) < 1 || Math.abs(bx + bw - ax) < 1;
+          if (verticalOverlap && touching && adepth !== bdepth) {
+            depthMismatch.add(a.id);
+            depthMismatch.add(b.id);
+          }
         }
       }
     }
@@ -288,6 +377,10 @@ let showForm = false;
     text-align: center;
     font-size: 10px;
     cursor: move;
+  }
+  .cabinet.inactive {
+    border-color: #ccc;
+    cursor: default;
   }
   .cabinet .controls {
     position: absolute;
@@ -366,17 +459,26 @@ let showForm = false;
       </button>
     </div>
 
+    <div class="flex gap-2 mb-4">
+      <button class="px-2 py-1 rounded border {view === 'top' ? 'bg-blue-500 text-white' : 'bg-white'}" on:click={() => viewChange('top')}>Top View</button>
+      <button class="px-2 py-1 rounded border {view === 'front' ? 'bg-blue-500 text-white' : 'bg-white'}" on:click={() => viewChange('front')}>Front View</button>
+      <button class="px-2 py-1 rounded border {view === 'side' ? 'bg-blue-500 text-white' : 'bg-white'}" on:click={() => viewChange('side')}>Side View</button>
+    </div>
+
     <div class="layout-container relative" style="width: {layoutWidth}px; height: {layoutHeight}px;">
       <div id="layout" bind:this={layout} style="width: {layoutWidth}px; height: {layoutHeight}px;">
         {#each $cabinets as cabinet, index}
           <div
-            class="cabinet"
+            class="cabinet {view !== 'top' && !isAligned(cabinet) ? 'inactive' : ''}"
             role="button"
             tabindex="{index}"
-            style="left: {cabinet.x}px; top: {cabinet.y}px; width: {cabinet.w/$scale}px; height: {cabinet.h/$scale}px; border-color: {depthMismatch.has(cabinet.id) ? 'red' : '#444'};"
-            on:mousedown={(e) => startDrag(e, cabinet.id)}
+            style="left: {getCabinetLeft(cabinet)}px; top: {cabinet[axes.top] ?? 0}px; width: {getCabinetWidth(cabinet)}px; height: {getCabinetHeight(cabinet)}px; border-color: {view === 'top' && depthMismatch.has(cabinet.id) ? 'red' : undefined};"
+            on:mousedown={(e) => isAligned(cabinet) && startDrag(e, cabinet.id)}
           >
             <div class="controls">
+              {#if view === 'top'}
+                <button on:click|stopPropagation={() => rotateCabinet(cabinet.id)}>↺</button>
+              {/if}
               <button on:click|stopPropagation={() => openEditForm(cabinet)}>✎</button>
               <button on:click|stopPropagation={() => deleteCabinet(cabinet.id)}>✕</button>
             </div>
@@ -399,15 +501,15 @@ let showForm = false;
       </div>
       <div class="dim-x">
           {#each $cabinets as cab}
-            <div class="tick" style="left: {(cab.x ?? 0) + ((cab.w ?? 0) / ($scale * 2))}px;">
-              <span>{Math.round(cab.w ?? 0)}</span>
+            <div class="tick" style="left: {getCabinetLeft(cab) + (getCabinetWidth(cab) / 2)}px;">
+              <span>{Math.round(getCabinetWidthRaw(cab))}</span>
             </div>
           {/each}
       </div>
       <div class="dim-y">
           {#each $cabinets as cab}
-            <div class="tick" style="top: {(cab.y ?? 0) + ((cab.h ?? 0) / ($scale * 2))}px;">
-              <span>{Math.round(cab.h ?? 0)}</span>
+            <div class="tick" style="top: {(cab[axes.top] ?? 0) + (getCabinetHeight(cab) / 2)}px;">
+              <span>{Math.round(getCabinetHeightRaw(cab))}</span>
             </div>
           {/each}
       </div>

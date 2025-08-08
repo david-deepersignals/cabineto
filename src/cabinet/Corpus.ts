@@ -27,6 +27,8 @@ export abstract class Corpus {
     d: number;
     x?: number;
     y?: number;
+    z?: number;
+    rotation?: number;
     type?: string;
     options?: CorpusOptions;
 
@@ -35,6 +37,7 @@ export abstract class Corpus {
         this.w = w;
         this.h = h;
         this.d = d;
+        this.rotation = 0;
         this.type = type;
         this.options = options;
     }

@@ -12,9 +12,9 @@
     export let cabinet: Corpus | null = null;
 
     let createDuplicate = false;
-    let width = '10';
-    let height = '10';
-    let depth = '10';
+    let width = '60';
+    let height = '80';
+    let depth = '56';
     let type = 'door';
     let doors = 2;
     let drawers = 3;
@@ -25,6 +25,7 @@
     let insetBack = false;
     let x = 0
     let y = 0
+    let z = 0
 
     onMount(() => {
         if (cabinet) {
@@ -33,6 +34,7 @@
             depth = (cabinet.d / 10).toString();
             x = cabinet.x ?? 0;
             y = cabinet.y ?? 0;
+            z = cabinet.z ?? 0;
             type = cabinet.type ?? 'door';
             fullCorpus = cabinet.options?.full ?? false;
             insetBack = cabinet.options?.insetBack ?? false;
@@ -126,6 +128,8 @@
 
         newCabinet.y = y;
         newCabinet.x = x;
+        newCabinet.z = z;
+        newCabinet.rotation = cabinet?.rotation ?? 0;
         newCabinet.validate();
         if (existingCabinet) {
             cabinets.update(prev => prev.map(c => c.id === existingCabinet.id ? newCabinet : c));

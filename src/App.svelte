@@ -1,20 +1,27 @@
 <script lang="ts">
 import Form from "./components/Form.svelte";
-import MaterialForm from "./components/MaterialForm.svelte";
+import SettingsModal from "./components/SettingsModal.svelte";
 import LayoutSummary from "./components/LayoutSummary.svelte";
 import BackupModal from "./components/BackupModal.svelte";
 import { cabinets } from './stores/cabinets';
 import { scale } from './stores/scale';
+import { room } from './stores/room';
 import type { Corpus } from './cabinet/Corpus';
-import { onMount } from 'svelte';
 
-const GRID_SIZE = 10;
+const GRID_SIZE = 5;
 let layoutWidthMm = 1000;
 let layoutHeightMm = 500;
 let layout: HTMLDivElement;
 
 type View = 'top' | 'front' | 'side';
 let view: View = 'top';
+let plane = 0;
+const DEFAULT_PLANES = [0];
+
+$: planeOptions = Array.from(new Set([...DEFAULT_PLANES, ...$cabinets.map(c => c.z ?? 0)])).sort((a,b) => a - b);
+$: {
+  if (planeOptions.length && !planeOptions.includes(plane)) plane = planeOptions[0];
+}
 
 function getAxes(v: View) {
   switch (v) {
@@ -73,33 +80,45 @@ function setCabinetLeft(cab: any, left: number, w: number) {
   }
 }
 
+function getCabinetTop(cab: any) {
+  if (view === 'top') return cab[axes.top] ?? 0;
+  const bottom = (cab.z ?? 0) / $scale;
+  const h = getCabinetHeight(cab);
+  return layoutHeight - bottom - h;
+}
+
+function setCabinetTop(cab: any, top: number, h: number) {
+  if (view === 'top') {
+    cab[axes.top] = top;
+  } else {
+    cab.z = layoutHeightMm - (top + h) * $scale;
+  }
+}
+
 function isAligned(cab: any) {
   if (view === 'front') {
-    return Math.abs(cab.y ?? 0) < GRID_SIZE / 2;
+    return cab.wall === 'north';
   }
   if (view === 'side') {
-    const w = getCabinetWidth(cab);
-    return Math.abs((cab.x ?? 0) + w - layoutWidth) < GRID_SIZE / 2;
+    return cab.wall === 'west';
   }
   return true;
 }
 
-function updateLayoutSize() {
-  layoutWidthMm = window.innerWidth - 100;
-  layoutHeightMm = window.innerHeight - 250;
+function isActive(cab: any) {
+  if (view === 'top') {
+    return (cab.z ?? 0) === plane;
+  }
+  return isAligned(cab);
 }
 
-onMount(() => {
-  updateLayoutSize();
-  window.addEventListener('resize', updateLayoutSize);
-  return () => window.removeEventListener('resize', updateLayoutSize);
-});
-
-$: layoutWidth = layoutWidthMm;
-$: layoutHeight = layoutHeightMm;
+$: layoutWidthMm = view === 'side' ? $room.depth : $room.width;
+$: layoutHeightMm = view === 'top' ? $room.depth : $room.height;
+$: layoutWidth = layoutWidthMm / $scale;
+$: layoutHeight = layoutHeightMm / $scale;
 
 let showForm = false;
-  let showMaterialForm = false;
+  let showSettings = false;
   let showSummary = false;
   let showBackup = false;
   let editingCabinet: Corpus | null = null;
@@ -119,8 +138,8 @@ let showForm = false;
     editingCabinet = null;
   };
 
-  const toggleMaterialForm = () => {
-    showMaterialForm = !showMaterialForm;
+  const toggleSettings = () => {
+    showSettings = !showSettings;
   };
 
   const toggleBackup = () => {
@@ -141,6 +160,35 @@ let showForm = false;
         const h = getCabinetHeight(cab);
         cab.x = Math.max(0, Math.min(layoutWidth - w, cab.x ?? 0));
         cab.y = Math.max(0, Math.min(layoutHeight - h, cab.y ?? 0));
+        let leftPos = cab.x ?? 0;
+        let topPos = cab.y ?? 0;
+        const distances = [
+          { side: 'west', val: leftPos },
+          { side: 'north', val: topPos },
+          { side: 'east', val: layoutWidth - (leftPos + w) },
+          { side: 'south', val: layoutHeight - (topPos + h) }
+        ];
+        const nearest = distances.reduce((a, b) => (a.val < b.val ? a : b));
+        switch (nearest.side) {
+          case 'west':
+            leftPos = 0;
+            cab.wall = 'west';
+            break;
+          case 'north':
+            topPos = 0;
+            cab.wall = 'north';
+            break;
+          case 'east':
+            leftPos = layoutWidth - w;
+            cab.wall = 'east';
+            break;
+          case 'south':
+            topPos = layoutHeight - h;
+            cab.wall = 'south';
+            break;
+        }
+        cab.x = leftPos;
+        cab.y = topPos;
         current[index] = cab;
       }
       return [...current];
@@ -199,7 +247,7 @@ let showForm = false;
       if (i !== -1) {
         const cab: any = current[i];
         setCabinetLeft(cab, left, w);
-        cab[axes.top] = top;
+        setCabinetTop(cab, top, h);
         current[i] = cab;
       }
       return [...current];
@@ -214,8 +262,8 @@ let showForm = false;
       if (index === -1) return current;
 
       const draggedCabinet: any = current[index];
-      let finalLeft = Math.round(((draggedCabinet[axes.left] ?? 0) / GRID_SIZE)) * GRID_SIZE;
-      let finalTop = Math.round(((draggedCabinet[axes.top] ?? 0) / GRID_SIZE)) * GRID_SIZE;
+      let finalLeft = Math.round((getCabinetLeft(draggedCabinet) / GRID_SIZE)) * GRID_SIZE;
+      let finalTop = Math.round((getCabinetTop(draggedCabinet) / GRID_SIZE)) * GRID_SIZE;
 
       const w = getCabinetWidth(draggedCabinet) || 100;
       const h = getCabinetHeight(draggedCabinet) || 100;
@@ -238,8 +286,8 @@ let showForm = false;
         if (i === index) return;
 
         const rect2 = {
-          x: otherCabinet[axes.left] ?? 0,
-          y: otherCabinet[axes.top] ?? 0,
+          x: getCabinetLeft(otherCabinet),
+          y: getCabinetTop(otherCabinet),
           w: getCabinetWidth(otherCabinet) || 100,
           h: getCabinetHeight(otherCabinet) || 100
         };
@@ -274,8 +322,8 @@ let showForm = false;
               if (j === index || j === i) return false;
 
             const rect3 = {
-                x: other2[axes.left] ?? 0,
-                y: other2[axes.top] ?? 0,
+                x: getCabinetLeft(other2),
+                y: getCabinetTop(other2),
                 w: getCabinetWidth(other2) || 100,
                 h: getCabinetHeight(other2) || 100
               };
@@ -298,15 +346,46 @@ let showForm = false;
 
       // Update cabinet position based on collision resolution
       if (!collision || bestSnap === null) {
-        draggedCabinet[axes.left] = finalLeft;
-        draggedCabinet[axes.top] = finalTop;
-        current[index] = draggedCabinet;
+        setCabinetLeft(draggedCabinet, finalLeft, w);
+        setCabinetTop(draggedCabinet, finalTop, h);
       } else {
-        draggedCabinet[axes.left] = bestSnap[0];
-        draggedCabinet[axes.top] = bestSnap[1];
-        current[index] = draggedCabinet;
+        setCabinetLeft(draggedCabinet, bestSnap[0], w);
+        setCabinetTop(draggedCabinet, bestSnap[1], h);
       }
 
+      if (view === 'top') {
+        let leftPos = getCabinetLeft(draggedCabinet);
+        let topPos = getCabinetTop(draggedCabinet);
+        const distances = [
+          { side: 'west', val: leftPos },
+          { side: 'north', val: topPos },
+          { side: 'east', val: layoutWidth - (leftPos + w) },
+          { side: 'south', val: layoutHeight - (topPos + h) }
+        ];
+        const nearest = distances.reduce((a, b) => (a.val < b.val ? a : b));
+        switch (nearest.side) {
+          case 'west':
+            leftPos = 0;
+            draggedCabinet.wall = 'west';
+            break;
+          case 'north':
+            topPos = 0;
+            draggedCabinet.wall = 'north';
+            break;
+          case 'east':
+            leftPos = layoutWidth - w;
+            draggedCabinet.wall = 'east';
+            break;
+          case 'south':
+            topPos = layoutHeight - h;
+            draggedCabinet.wall = 'south';
+            break;
+        }
+        setCabinetLeft(draggedCabinet, leftPos, w);
+        setCabinetTop(draggedCabinet, topPos, h);
+      }
+
+      current[index] = draggedCabinet;
       return [...current];
     });
 
@@ -372,7 +451,8 @@ let showForm = false;
   .cabinet {
     position: absolute;
     border: 2px solid #444;
-    background-color: rgba(100, 150, 240, 0.3);
+    background: linear-gradient(135deg, rgba(100,150,240,0.6), rgba(100,150,240,0.3));
+    box-shadow: 3px 3px 4px rgba(0,0,0,0.2);
     padding: 4px;
     text-align: center;
     font-size: 10px;
@@ -381,6 +461,9 @@ let showForm = false;
   .cabinet.inactive {
     border-color: #ccc;
     cursor: default;
+    opacity: 0.3;
+    box-shadow: none;
+    pointer-events: none;
   }
   .cabinet .controls {
     position: absolute;
@@ -436,6 +519,48 @@ let showForm = false;
     transform: translateY(-50%);
     font-size: 10px;
   }
+  .plane-line {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: rgba(59,130,246,0.4);
+    pointer-events: none;
+  }
+  .plane-line.active {
+    background: rgba(59,130,246,0.8);
+  }
+  .plane-line span {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    transform: translateY(-100%);
+    font-size: 10px;
+    background: rgba(255,255,255,0.7);
+    padding: 0 2px;
+  }
+  .wall-label {
+    position: absolute;
+    font-size: 12px;
+    background: rgba(255,255,255,0.7);
+    padding: 0 4px;
+  }
+  .wall-label.north {
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .wall-label.west {
+    left: -18px;
+    top: 50%;
+    transform: translateY(-50%) rotate(-90deg);
+    transform-origin: left top;
+  }
+  .wall-label.center {
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
 </style>
 
 <div class="h-full">
@@ -448,8 +573,8 @@ let showForm = false;
       <button on:click={openAddForm} class="px-4 py-2 bg-blue-600 text-white rounded">
         Add Cabinet
       </button>
-      <button on:click={toggleMaterialForm} class="px-4 py-2 bg-purple-600 text-white rounded">
-        {showMaterialForm ? 'Close Materials' : 'Materials'}
+      <button on:click={toggleSettings} class="px-4 py-2 bg-purple-600 text-white rounded">
+        {showSettings ? 'Close Settings' : 'Settings'}
       </button>
       <button class="px-4 py-2 bg-yellow-600 text-white rounded" on:click={toggleBackup}>
         Backups
@@ -459,21 +584,40 @@ let showForm = false;
       </button>
     </div>
 
-    <div class="flex gap-2 mb-4">
+    <div class="flex gap-2 mb-2">
       <button class="px-2 py-1 rounded border {view === 'top' ? 'bg-blue-500 text-white' : 'bg-white'}" on:click={() => viewChange('top')}>Top View</button>
-      <button class="px-2 py-1 rounded border {view === 'front' ? 'bg-blue-500 text-white' : 'bg-white'}" on:click={() => viewChange('front')}>Front View</button>
-      <button class="px-2 py-1 rounded border {view === 'side' ? 'bg-blue-500 text-white' : 'bg-white'}" on:click={() => viewChange('side')}>Side View</button>
+      <button class="px-2 py-1 rounded border {view === 'front' ? 'bg-blue-500 text-white' : 'bg-white'}" on:click={() => viewChange('front')}>North Wall</button>
+      <button class="px-2 py-1 rounded border {view === 'side' ? 'bg-blue-500 text-white' : 'bg-white'}" on:click={() => viewChange('side')}>West Wall</button>
     </div>
+    {#if view === 'top' && planeOptions.length > 1}
+      <div class="mb-4">
+        <label>Plane:
+          <select bind:value={plane} on:change={() => viewChange('top')}  class="border p-1">
+            {#each planeOptions as p}
+              <option value={p}>{p === 0 ? 'Base cabinets' : `Upper cabinets (${p} mm)`}</option>
+            {/each}
+          </select>
+        </label>
+      </div>
+    {/if}
 
     <div class="layout-container relative" style="width: {layoutWidth}px; height: {layoutHeight}px;">
       <div id="layout" bind:this={layout} style="width: {layoutWidth}px; height: {layoutHeight}px;">
+        {#if view === 'top'}
+          <div class="wall-label north">North</div>
+          <div class="wall-label west">West</div>
+        {:else if view === 'front'}
+          <div class="wall-label center">North Wall</div>
+        {:else}
+          <div class="wall-label center">West Wall</div>
+        {/if}
         {#each $cabinets as cabinet, index}
           <div
-            class="cabinet {view !== 'top' && !isAligned(cabinet) ? 'inactive' : ''}"
+            class="cabinet {isActive(cabinet) ? '' : 'inactive'}"
             role="button"
             tabindex="{index}"
-            style="left: {getCabinetLeft(cabinet)}px; top: {cabinet[axes.top] ?? 0}px; width: {getCabinetWidth(cabinet)}px; height: {getCabinetHeight(cabinet)}px; border-color: {view === 'top' && depthMismatch.has(cabinet.id) ? 'red' : undefined};"
-            on:mousedown={(e) => isAligned(cabinet) && startDrag(e, cabinet.id)}
+            style="left: {getCabinetLeft(cabinet)}px; {view === 'top' ? `top: ${getCabinetTop(cabinet)}px;` : `bottom: ${(cabinet.z ?? 0) / $scale}px;`} width: {getCabinetWidth(cabinet)}px; height: {getCabinetHeight(cabinet)}px; border-color: {view === 'top' && depthMismatch.has(cabinet.id) ? 'red' : undefined};"
+            on:mousedown={(e) => isActive(cabinet) && startDrag(e, cabinet.id)}
           >
             <div class="controls">
               {#if view === 'top'}
@@ -498,6 +642,13 @@ let showForm = false;
             {/if}
           </div>
         {/each}
+        {#if view !== 'top'}
+          {#each planeOptions as p}
+            <div class="plane-line {p === plane ? 'active' : ''}" style="bottom: {p / $scale}px;">
+              <span>{p === 0 ? 'Base' : `${p} mm`}</span>
+            </div>
+          {/each}
+        {/if}
       </div>
       <div class="dim-x">
           {#each $cabinets as cab}
@@ -508,7 +659,7 @@ let showForm = false;
       </div>
       <div class="dim-y">
           {#each $cabinets as cab}
-            <div class="tick" style="top: {(cab[axes.top] ?? 0) + (getCabinetHeight(cab) / 2)}px;">
+            <div class="tick" style="top: {getCabinetTop(cab) + (getCabinetHeight(cab) / 2)}px;">
               <span>{Math.round(getCabinetHeightRaw(cab))}</span>
             </div>
           {/each}
@@ -522,8 +673,8 @@ let showForm = false;
     {#if showForm}
       <Form cabinet={editingCabinet} on:close={closeForm} />
     {/if}
-    {#if showMaterialForm}
-      <MaterialForm on:close={() => showMaterialForm = false} />
+    {#if showSettings}
+      <SettingsModal on:close={() => showSettings = false} />
     {/if}
   {/if}
   {#if showBackup}

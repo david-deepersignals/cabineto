@@ -31,6 +31,7 @@ export abstract class Corpus {
     rotation?: number;
     type?: string;
     options?: CorpusOptions;
+    wall?: 'north' | 'south' | 'east' | 'west';
 
     constructor(id: string, w: number, h: number, d: number, type: string = "corpus", options?: CorpusOptions) {
         this.id = id;

@@ -129,6 +129,7 @@
         newCabinet.y = y;
         newCabinet.x = x;
         newCabinet.z = z;
+        newCabinet.wall = (cabinet as any)?.wall ?? 'north';
         newCabinet.rotation = cabinet?.rotation ?? 0;
         newCabinet.validate();
         if (existingCabinet) {

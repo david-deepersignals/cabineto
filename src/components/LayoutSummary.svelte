@@ -3,6 +3,7 @@ import { cabinets } from '../stores/cabinets';
 import { createEventDispatcher } from 'svelte';
 import { scale } from '../stores/scale';
 import type { Panel } from '../cabinet/Corpus';
+import JSZip from 'jszip';
 
 const dispatch = createEventDispatcher();
 
@@ -220,11 +221,109 @@ function downloadCSV() {
   a.click();
 }
 
+function panelDadoSvg(p: Panel): string {
+  const margin = 150;
+  const width = p.length;
+  const height = p.width;
+  const crossSectionWidth = p.dados?.[0]?.width || 0;
+  const crossSectionDepth = p.dados?.[0]?.depth || 0;
+  const panelThickness = 20; // Assume panel thickness for cross-section
+
+  // Adjust canvas size
+  const totalW = width + crossSectionWidth + margin * 3; // Add space for cross-section to the right
+  const totalH = Math.max(height, crossSectionDepth + panelThickness) + margin * 2;
+
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}">`;
+
+  // -------------------------------
+  // Top View (Main Panel with Dados)
+  // -------------------------------
+  svg += `<rect x="${margin}" y="${margin}" width="${width}" height="${height}" fill="none" stroke="black"/>`;
+
+  p.dados?.forEach((d) => {
+    // Dado rectangle in red
+    svg += `<rect x="${margin}" y="${margin + d.offset}" width="${width}" height="${d.width}" fill="none" stroke="red"/>`;
+
+    // Vertical offset dimension
+    const dimOffsetX = margin - 10;
+    svg += `<line x1="${dimOffsetX}" y1="${margin}" x2="${dimOffsetX}" y2="${margin + d.offset}" stroke="black"/>`;
+    svg += `<text x="${dimOffsetX - 2}" y="${margin + d.offset / 2}" font-size="12" text-anchor="end" dominant-baseline="middle">${d.offset} mm</text>`;
+
+    // Width dimension line (next to dado)
+    const dimWidthX = margin - 25;
+    svg += `<line x1="${dimWidthX}" y1="${margin + d.offset}" x2="${dimWidthX}" y2="${margin + d.offset + d.width}" stroke="black"/>`;
+    svg += `<text x="${dimWidthX - 2}" y="${margin + d.offset + d.width / 2}" font-size="12" text-anchor="end" dominant-baseline="middle">${d.width} mm</text>`;
+
+    // Depth text inside dado
+    svg += `<text x="${margin + width / 2}" y="${margin + d.offset + d.width / 2}" font-size="12" text-anchor="middle" dominant-baseline="middle" fill="red">${d.depth} mm deep</text>`;
+
+    // Top width dimension
+    svg += `<line x1="${margin}" y1="${margin - 20}" x2="${margin + width}" y2="${margin - 20}" stroke="black"/>`;
+    svg += `<text x="${margin + width / 2}" y="${margin - 25}" font-size="12" text-anchor="middle">${width} mm</text>`;
+  });
+
+  if (p.dados?.length > 0) {
+    const crossSectionStartX = margin + width + margin; // Positioned to the right of the top view
+    const crossSectionMarginY = margin; // Aligned vertically with the top view
+
+    // Draw the panel outline (black rectangle)
+    svg += `<rect x="${crossSectionStartX}" y="${crossSectionMarginY}" width="${panelThickness}" height="${
+            panelThickness + crossSectionDepth
+    }" fill="none" stroke="black"/>`;
+
+    // Draw the dado cutout (red rectangle inside the panel)
+    svg += `<rect x="${crossSectionStartX}" y="${crossSectionMarginY + panelThickness}" width="${crossSectionWidth}" height="${crossSectionDepth}" fill="none" stroke="red"/>`;
+
+    // Width dimension (horizontal, below dado cutout)
+    const dimWidthY = crossSectionMarginY + panelThickness + crossSectionDepth + 15;
+    svg += `<line x1="${crossSectionStartX}" y1="${dimWidthY}" x2="${crossSectionStartX + crossSectionWidth}" y2="${dimWidthY}" stroke="black"/>`;
+    svg += `<text x="${crossSectionStartX + crossSectionWidth / 2}" y="${
+            dimWidthY + 12
+    }" font-size="12" text-anchor="middle">${crossSectionWidth} mm</text>`;
+
+    // Depth dimension (vertical, left of the dado cutout)
+    const dimDepthX = crossSectionStartX - 10;
+    svg += `<line x1="${dimDepthX}" y1="${
+            crossSectionMarginY + panelThickness
+    }" x2="${dimDepthX}" y2="${crossSectionMarginY + panelThickness + crossSectionDepth}" stroke="black"/>`;
+    svg += `<text x="${dimDepthX - 2}" y="${
+            crossSectionMarginY + panelThickness + crossSectionDepth / 2
+    }" font-size="12" text-anchor="end" dominant-baseline="middle">${crossSectionDepth} mm</text>`;
+  }
+
+  svg += `</svg>`;
+  return svg;
+
+}
+
+async function downloadDadoDrawings() {
+  const zip = new JSZip();
+  let index = 1;
+  $cabinets.forEach(cab => {
+    cab.panels().forEach((p: Panel) => {
+      if (p.dados && p.dados.length) {
+        const svg = panelDadoSvg(p);
+        const safeLabel = p.label.replace(/[^a-z0-9]/gi, '_');
+        zip.file(`${index}_${safeLabel}.svg`, svg);
+        index++;
+      }
+    });
+  });
+  const content = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(content);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'dado_drawings.zip';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function csvGeneral() {
-  let csv = "length (mm),width (mm),quantity,edge banding length right,edge banding length left,edge banding width bottom,edge banding width top,label,hinge location,material name,material thickness\n";
+  let csv = "length (mm),width (mm),quantity,edge banding length right,edge banding length left,edge banding width bottom,edge banding width top,label,hinge location,dado,material name,material thickness\n";
 
   $cabinets.forEach(cab => {
     cab.panels().forEach((p: Panel) => {
+      const dadoStr = p.dados?.map(d => `${d.offset}/${d.depth}/${d.width}`).join('|') ?? '';
       csv += [
         p.length,
         p.width,
@@ -235,6 +334,7 @@ function csvGeneral() {
         p.edgeBandingWidthTop,
         p.label,
         p.hingeLocation,
+        dadoStr,
         p.material,
         p.materialThickness
       ].join(",") + "\n";
@@ -272,10 +372,10 @@ function csvMaxMoris() {
         '',
         '',
         '',
-        '',
-        p.hingeLocation,
-        ''
-      ].join(",") + "\n";
+          p.dados?.map(d => `${d.offset}/${d.depth}/${d.width}`).join('|') ?? '',
+          p.hingeLocation,
+          ''
+        ].join(",") + "\n";
 
       index++;
     });
@@ -291,6 +391,7 @@ function csvMaxMoris() {
     <option value="max">Max Moris</option>
   </select>
   <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={downloadCSV}>Download CSV</button>
+  <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={downloadDadoDrawings}>Download Dado Drawings</button>
   <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => exportLayout('top')}>Export Top</button>
   <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => exportLayout('north')}>Export North</button>
   <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => exportLayout('west')}>Export West</button>
@@ -697,6 +798,10 @@ function csvMaxMoris() {
       >
         Export {cab.id}
       </button>
+    </div>
+
+    <div class="mt-2">
+      {panelDadoSvg(cab.panels()[0])}
     </div>
   {/each}
 </div>

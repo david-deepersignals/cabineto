@@ -8,7 +8,7 @@ import { scale } from './stores/scale';
 import { room } from './stores/room';
 import type { Corpus } from './cabinet/Corpus';
 
-const GRID_SIZE = 5;
+const GRID_SIZE = 10;
 let layoutWidthMm = 1000;
 let layoutHeightMm = 500;
 let layout: HTMLDivElement;
@@ -28,7 +28,7 @@ function getAxes(v: View) {
     case 'front':
       return { left: 'x', top: 'z', width: 'w', height: 'h' } as const;
     case 'side':
-      return { left: 'y', top: 'z', width: 'd', height: 'h' } as const;
+      return { left: 'y', top: 'z', width: 'w', height: 'h' } as const;
     default:
       return { left: 'x', top: 'y', width: 'w', height: 'd' } as const;
   }
@@ -70,7 +70,8 @@ function getCabinetDisplayWidth(cab: any) {
   // Width used for rendering the cabinet element itself. Unlike
   // `getCabinetWidth` this ignores the rotation so that the element's
   // dimensions stay constant and the CSS rotation visually rotates it.
-  return (axes.width === 'w' ? cab.w : cab.d) / $scale;
+  //return (axes.width === 'w' ? cab.w : cab.d) / $scale;
+  return (isActive(cab) ? cab.w : cab.d) / $scale;
 }
 
 function getCabinetDisplayHeight(cab: any) {
@@ -82,7 +83,7 @@ function getCabinetDisplayHeight(cab: any) {
 
 function getCabinetLeft(cab: any) {
   if (view === 'side') {
-    const w = getCabinetWidth(cab);
+    const w = getCabinetDisplayWidth(cab);
     return layoutWidth - (cab.y ?? 0) - w;
   }
   return cab[axes.left] ?? 0;
@@ -129,8 +130,8 @@ function getCabinetRect(cab: any) {
   return {
     x: getCabinetLeft(cab),
     y: getCabinetTop(cab),
-    w: getCabinetWidth(cab) || 100,
-    h: getCabinetHeight(cab) || 100
+    w: getCabinetDisplayWidth(cab) || 100,
+    h: getCabinetDisplayHeight(cab) || 100
   };
 }
 
@@ -276,8 +277,8 @@ let showForm = false;
 
     const index = $cabinets.findIndex((cab) => cab.id === dragInfo.targetId);
     const currentCab: any = $cabinets[index];
-    const w = getCabinetWidth(currentCab);
-    const h = getCabinetHeight(currentCab);
+    const w = getCabinetDisplayWidth(currentCab);
+    const h = getCabinetDisplayHeight(currentCab);
     left = Math.max(0, Math.min(layoutWidth - w, left));
     top = Math.max(0, Math.min(layoutHeight - h, top));
 
@@ -304,8 +305,8 @@ let showForm = false;
       let finalLeft = Math.round((getCabinetLeft(draggedCabinet) / GRID_SIZE)) * GRID_SIZE;
       let finalTop = Math.round((getCabinetTop(draggedCabinet) / GRID_SIZE)) * GRID_SIZE;
 
-      const w = getCabinetWidth(draggedCabinet) || 100;
-      const h = getCabinetHeight(draggedCabinet) || 100;
+      const w = getCabinetDisplayWidth(draggedCabinet) || 100;
+      const h = getCabinetDisplayHeight(draggedCabinet) || 100;
 
       finalLeft = Math.max(0, Math.min(layoutWidth - w, finalLeft));
       finalTop = Math.max(0, Math.min(layoutHeight - h, finalTop));

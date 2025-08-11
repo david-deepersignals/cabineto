@@ -15,9 +15,6 @@ const viewConfigs: ViewConfig[] = [
   { id: 'west', label: 'West View' }
 ];
 
-let layoutSvgs: Partial<Record<View, SVGSVGElement>> = {};
-let cabinetSvgs: Record<string, SVGSVGElement> = {};
-
 const DIM_OFFSET = 20;
 const MARGIN = 40;
 const CABINET_MARGIN = 20;
@@ -189,28 +186,6 @@ const totalHeightMm = (b: Bounds) => Math.round(b.height * $scale);
 const svgWidth = (b: Bounds) => b.width + MARGIN + DIM_OFFSET * 5;
 const svgHeight = (b: Bounds) => b.height + MARGIN + DIM_OFFSET * 5;
 
-function exportSVG(el: SVGSVGElement, filename: string) {
-  const serializer = new XMLSerializer();
-  const source = serializer.serializeToString(el);
-  const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function exportLayout(view: View) {
-  const el = layoutSvgs[view];
-  if (el) exportSVG(el, `${view}-layout-summary.svg`);
-}
-
-function exportCab(id: string) {
-  const el = cabinetSvgs[id];
-  if (el) exportSVG(el, `${id}.svg`);
-}
-
 function downloadCSV() {
   const csv = csvType === 'general' ? csvGeneral() : csvMaxMoris();
   const blob = new Blob([csv], { type: 'text/csv' });
@@ -296,7 +271,7 @@ function panelDadoSvg(p: Panel,index: number): string {
 
     const titleX = crossSectionStartX + crossSectionWidth / 2;
     const titleY = crossSectionMarginY - 50; // Position the title above the cross-section
-    svg += `<text x="${titleX}" y="${titleY}" font-size="16" text-anchor="middle" dominant-baseline="bottom">Prijesjek</text>`;
+    svg += `<text x="${titleX}" y="${titleY}" font-size="16" text-anchor="middle" dominant-baseline="bottom">Prjesjek</text>`;
 
     // Draw the panel outline (black rectangle)
     svg += `<line x1="${crossSectionStartX}" y1="${crossSectionMarginY}" x2="${crossSectionStartX + crossSectionWidth}" y2="${crossSectionMarginY}" stroke="black"/>`;
@@ -437,23 +412,19 @@ function csvMaxMoris() {
 }
 </script>
 
-<div class="mb-4 flex gap-2 items-center">
+<div class="mb-4 flex gap-2 items-center no-print">
   <select bind:value={csvType} class="border p-2">
     <option value="general">General</option>
     <option value="max">Max Moris</option>
   </select>
   <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={downloadCSV}>Download CSV</button>
   <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={downloadDadoDrawings}>Download Dado Drawings</button>
-  <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => exportLayout('top')}>Export Top</button>
-  <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => exportLayout('north')}>Export North</button>
-  <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => exportLayout('west')}>Export West</button>
-  <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => exportLayout('iso')}>Export 3D</button>
+  <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => window.print()}>Print</button>
   <button class="px-4 py-2 bg-blue-600 text-white rounded" on:click={() => dispatch('close')}>Back</button>
 </div>
 
 <h3 class="font-semibold mb-2">3D View</h3>
 <svg
-  bind:this={layoutSvgs['iso']}
   width={iso.bounds.width + MARGIN * 2}
   height={iso.bounds.height + MARGIN * 2}
   style="border:1px solid #000"
@@ -620,7 +591,6 @@ function csvMaxMoris() {
   {@const axes = getAxes(v.id)}
   <h3 class="font-semibold mb-2">{v.label}</h3>
   <svg
-    bind:this={layoutSvgs[v.id]}
     width={svgWidth(data.bounds)}
     height={svgHeight(data.bounds)}
     style="border:1px solid #000"
@@ -721,11 +691,55 @@ function csvMaxMoris() {
 <h3 class="font-semibold mb-2">Cabinet Drawings</h3>
 <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
   {#each $cabinets as cab}
+    {@const dims = getOrientedDims(cab)}
     {@const w = cab.w / $scale}
     {@const h = cab.h / $scale}
+    {@const wIso = dims.w / $scale}
+    {@const dIso = dims.d / $scale}
+    {@const hIso = cab.h / $scale}
+    {@const isoPoints = [
+      isoProject(0, 0, 0),
+      isoProject(wIso, 0, 0),
+      isoProject(wIso, dIso, 0),
+      isoProject(0, dIso, 0),
+      isoProject(0, 0, hIso),
+      isoProject(wIso, 0, hIso),
+      isoProject(wIso, dIso, hIso),
+      isoProject(0, dIso, hIso)
+    ]}
+    {@const isoMinX = Math.min(...isoPoints.map(p => p.x))}
+    {@const isoMaxX = Math.max(...isoPoints.map(p => p.x))}
+    {@const isoMinY = Math.min(...isoPoints.map(p => p.y))}
+    {@const isoMaxY = Math.max(...isoPoints.map(p => p.y))}
+    {@const isoSvgW = isoMaxX - isoMinX + CABINET_MARGIN * 2 + CABINET_DIM * 3}
+    {@const isoSvgH = isoMaxY - isoMinY + CABINET_MARGIN * 2 + CABINET_DIM * 3}
+    {@const isoTx = CABINET_MARGIN + CABINET_DIM - isoMinX}
+    {@const isoTy = CABINET_MARGIN + CABINET_DIM - isoMinY}
+    {@const p1 = isoPoints[0]}
+    {@const p2 = isoPoints[1]}
+    {@const p3 = isoPoints[2]}
+    {@const p4 = isoPoints[3]}
+    {@const p5 = isoPoints[4]}
+    {@const p6 = isoPoints[5]}
+    {@const p7 = isoPoints[6]}
+    {@const p8 = isoPoints[7]}
+    {@const widthY = p1.y + CABINET_DIM}
+    {@const heightX = p1.x - CABINET_DIM}
+    {@const dx = p4.x - p1.x}
+    {@const dy = p4.y - p1.y}
+    {@const len = Math.sqrt(dx * dx + dy * dy)}
+    {@const offX = -dy / len * CABINET_DIM}
+    {@const offY = dx / len * CABINET_DIM}
+    {@const offNX = offX / CABINET_DIM}
+    {@const offNY = offY / CABINET_DIM}
+    {@const startX = p1.x + offX}
+    {@const startY = p1.y + offY}
+    {@const endX = p4.x + offX}
+    {@const endY = p4.y + offY}
+    {@const midX = (startX + endX) / 2 + offNX * 10}
+    {@const midY = (startY + endY) / 2 + offNY * 10}
     <div class="border p-2 flex flex-col items-center">
       <svg
-        bind:this={cabinetSvgs[cab.id]}
         width={w + CABINET_MARGIN * 2 + CABINET_DIM * 3}
         height={h + CABINET_MARGIN * 2 + CABINET_DIM * 3}
         style="border:1px solid #000"
@@ -824,6 +838,39 @@ function csvMaxMoris() {
           {/if}
         {/if}
       </svg>
+      <svg
+        width={isoSvgW}
+        height={isoSvgH}
+        style="border:1px solid #000; margin-top:8px"
+      >
+        <g transform={`translate(${isoTx},${isoTy})`}>
+          <polygon points={`${p5.x},${p5.y} ${p6.x},${p6.y} ${p7.x},${p7.y} ${p8.x},${p8.y}`} fill="none" stroke="black" />
+          <polygon points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`} fill="none" stroke="black" />
+          <line x1={p1.x} y1={p1.y} x2={p5.x} y2={p5.y} stroke="black" />
+          <line x1={p2.x} y1={p2.y} x2={p6.x} y2={p6.y} stroke="black" />
+          <line x1={p3.x} y1={p3.y} x2={p7.x} y2={p7.y} stroke="black" />
+          <line x1={p4.x} y1={p4.y} x2={p8.x} y2={p8.y} stroke="black" />
+
+          <line x1={p1.x + offX} y1={p1.y + offY} x2={p2.x + offX} y2={p2.y + offY} stroke="black"/>
+          <line x1={p1.x + offX} y1={p1.y + offY - 5} x2={p1.x + offX} y2={p1.y + offY + 5} stroke="black"/>
+          <line x1={p2.x + offX} y1={p2.y + offY - 5} x2={p2.x + offX} y2={p2.y + offY + 5} stroke="black"/>
+          <text x={(p1.x + p2.x) / 2 + offX} y={widthY + offY + 15} text-anchor="middle"
+                font-size="10">{Math.round(dims.w)} mm
+          </text>
+
+          <line x1={heightX} y1={p1.y} x2={heightX} y2={p5.y} stroke="black" />
+          <line x1={heightX - 5} y1={p1.y} x2={heightX + 5} y2={p1.y} stroke="black" />
+          <line x1={heightX - 5} y1={p5.y} x2={heightX + 5} y2={p5.y} stroke="black" />
+          <text x={heightX - 5} y={(p1.y + p5.y) / 2} text-anchor="end" dominant-baseline="middle" font-size="10">{Math.round(cab.h)} mm</text>
+
+          <line x1={startX} y1={startY} x2={endX} y2={endY} stroke="black" />
+          <line x1={startX - offNX * 5} y1={startY - offNY * 5} x2={startX + offNX * 5} y2={startY + offNY * 5} stroke="black" />
+          <line x1={endX - offNX * 5} y1={endY - offNY * 5} x2={endX + offNX * 5} y2={endY + offNY * 5} stroke="black" />
+          <text x={midX} y={midY} text-anchor="middle" font-size="10">{Math.round(dims.d)} mm</text>
+
+          
+        </g>
+      </svg>
       <div class="text-xs mt-1 text-center">
         <p>Width: {Math.round(cab.w)} mm</p>
         <p>Height: {Math.round(cab.h)} mm</p>
@@ -844,12 +891,14 @@ function csvMaxMoris() {
           <p>Fixed Side: {(cab as any).fixedSide} mm</p>
         {/if}
       </div>
-      <button
-        class="mt-2 px-2 py-1 bg-green-600 text-white rounded text-xs"
-        on:click={() => exportCab(cab.id)}
-      >
-        Export {cab.id}
-      </button>
     </div>
   {/each}
 </div>
+
+<style>
+  @media print {
+    .no-print {
+      display: none;
+    }
+  }
+</style>

@@ -799,9 +799,5 @@ function csvMaxMoris() {
         Export {cab.id}
       </button>
     </div>
-
-    <div class="mt-2">
-      {panelDadoSvg(cab.panels()[0])}
-    </div>
   {/each}
 </div>

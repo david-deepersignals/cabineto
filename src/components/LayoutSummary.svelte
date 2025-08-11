@@ -42,6 +42,24 @@ function getAxes(view: View) {
   }
 }
 
+function getOrientedDims(cab: any) {
+  return cab.rotation === 90 || cab.rotation === 270
+    ? { w: cab.d, d: cab.w }
+    : { w: cab.w, d: cab.d };
+}
+
+function getWidthPx(cab: any, axes: { width: 'w' | 'd' }) {
+  const dims = getOrientedDims(cab);
+  const w = axes.width === 'w' ? dims.w : dims.d;
+  return w / $scale;
+}
+
+function getHeightPx(cab: any, axes: { height: 'h' | 'd' }) {
+  if (axes.height === 'h') return cab.h / $scale;
+  const dims = getOrientedDims(cab);
+  return dims.d / $scale;
+}
+
 function prepare(view: View) {
   const axes = getAxes(view);
   const cabs = $cabinets.filter(axes.filter);
@@ -56,21 +74,31 @@ function prepare(view: View) {
     };
 
   const minX = Math.min(...cabs.map(c => c[axes.left] ?? 0));
-  const maxX = Math.max(...cabs.map(c => (c[axes.left] ?? 0) + c[axes.width] / $scale));
+  const maxX = Math.max(
+    ...cabs.map(c => (c[axes.left] ?? 0) + getWidthPx(c, axes))
+  );
   let minY: number;
   let maxY: number;
   if (view === 'top') {
     minY = Math.min(...cabs.map(c => c[axes.top] ?? 0));
-    maxY = Math.max(...cabs.map(c => (c[axes.top] ?? 0) + c[axes.height] / $scale));
+    maxY = Math.max(
+      ...cabs.map(c => (c[axes.top] ?? 0) + getHeightPx(c, axes))
+    );
   } else {
     minY = 0;
-    maxY = Math.max(...cabs.map(c => (c[axes.top] ?? 0) / $scale + c[axes.height] / $scale));
+    maxY = Math.max(
+      ...cabs.map(c => (c[axes.top] ?? 0) / $scale + getHeightPx(c, axes))
+    );
   }
   const bounds: Bounds = { minX, minY, width: maxX - minX, height: maxY - minY };
 
   const sorted = cabs
     .slice()
-    .sort((a, b) => (a[axes.left] ?? 0) - (b[axes.left] ?? 0));
+    .sort((a, b) =>
+      view === 'west'
+        ? (b[axes.left] ?? 0) - (a[axes.left] ?? 0)
+        : (a[axes.left] ?? 0) - (b[axes.left] ?? 0)
+    );
 
   let rows;
   if (view === 'top') {
@@ -92,11 +120,12 @@ function prepare(view: View) {
   cabs.forEach(cab => {
     if (view === 'top') {
       const top = (cab[axes.top] ?? 0) - minY;
-      const bottom = top + cab[axes.height] / $scale;
+      const bottom = top + getHeightPx(cab, axes);
       edges.add(top);
       edges.add(bottom);
     } else {
-      const top = bounds.height - ((cab[axes.top] ?? 0) + cab[axes.height]) / $scale;
+      const top =
+        bounds.height - ((cab[axes.top] ?? 0) / $scale + getHeightPx(cab, axes));
       const bottom = bounds.height - (cab[axes.top] ?? 0) / $scale;
       edges.add(top);
       edges.add(bottom);
@@ -123,8 +152,9 @@ function prepareIso() {
     const x = cab.x ?? 0;
     const y = cab.y ?? 0;
     const z = (cab.z ?? 0) / $scale;
-    const w = cab.w / $scale;
-    const d = cab.d / $scale;
+    const dims = getOrientedDims(cab);
+    const w = dims.w / $scale;
+    const d = dims.d / $scale;
     const h = cab.h / $scale;
     const corners = [
       isoProject(x, y, z + h),
@@ -284,12 +314,15 @@ function csvMaxMoris() {
       </pattern>
     </defs>
     {#each data.sorted as cab}
-      {@const x = (cab[axes.left] ?? 0) - data.bounds.minX + MARGIN}
-      {@const w = cab[axes.width] / $scale}
-      {@const h = cab[axes.height] / $scale}
+      {@const baseX = (cab[axes.left] ?? 0) - data.bounds.minX}
+      {@const w = getWidthPx(cab, axes)}
+      {@const h = getHeightPx(cab, axes)}
+      {@const x = v.id === 'west'
+        ? data.bounds.width - (baseX + w) + MARGIN
+        : baseX + MARGIN}
       {@const y = v.id === 'top'
         ? (cab[axes.top] ?? 0) - data.bounds.minY + MARGIN
-        : data.bounds.height - ((cab[axes.top] ?? 0) + cab[axes.height]) / $scale + MARGIN}
+        : data.bounds.height - ((cab[axes.top] ?? 0) / $scale + h) + MARGIN}
       {#if cab.type === 'corner' && (cab as any).fixedSide}
         {@const fixed = (cab as any).fixedSide / $scale}
         <rect x={x} y={y} width={fixed} height={h} fill={`url(#hatch-${v.id})`} />
@@ -342,11 +375,17 @@ function csvMaxMoris() {
     <!-- horizontal dimension line -->
     <line x1={MARGIN} y1={data.bounds.height + MARGIN + DIM_OFFSET} x2={data.bounds.width + MARGIN} y2={data.bounds.height + MARGIN + DIM_OFFSET} stroke="black" />
     {#each data.sorted as cab}
-      {@const x = (cab[axes.left] ?? 0) - data.bounds.minX + MARGIN}
-      {@const w = cab[axes.width] / $scale}
+      {@const baseX = (cab[axes.left] ?? 0) - data.bounds.minX}
+      {@const w = getWidthPx(cab, axes)}
+      {@const x = v.id === 'west'
+        ? data.bounds.width - (baseX + w) + MARGIN
+        : baseX + MARGIN}
+      {@const widthMm = axes.width === 'w'
+        ? getOrientedDims(cab).w
+        : getOrientedDims(cab).d}
       <line x1={x} y1={data.bounds.height + MARGIN + DIM_OFFSET - 5} x2={x} y2={data.bounds.height + MARGIN + DIM_OFFSET + 5} stroke="black" />
       <line x1={x + w} y1={data.bounds.height + MARGIN + DIM_OFFSET - 5} x2={x + w} y2={data.bounds.height + MARGIN + DIM_OFFSET + 5} stroke="black" />
-      <text x={x + w / 2} y={data.bounds.height + MARGIN + DIM_OFFSET + 15} text-anchor="middle" font-size="12">{Math.round(cab[axes.width])} mm</text>
+      <text x={x + w / 2} y={data.bounds.height + MARGIN + DIM_OFFSET + 15} text-anchor="middle" font-size="12">{Math.round(widthMm)} mm</text>
     {/each}
     <text x={data.bounds.width / 2 + MARGIN} y={data.bounds.height + MARGIN + DIM_OFFSET + 35} text-anchor="middle" font-size="12">Total {totalWidthMm(data.bounds)} mm</text>
 

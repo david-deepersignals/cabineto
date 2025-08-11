@@ -26,6 +26,7 @@
     let x = 0
     let y = 0
     let z = 0
+    let rotation = '0';
 
     onMount(() => {
         if (cabinet) {
@@ -35,6 +36,7 @@
             x = cabinet.x ?? 0;
             y = cabinet.y ?? 0;
             z = cabinet.z ?? 0;
+            rotation = (cabinet.rotation ?? 0).toString();
             type = cabinet.type ?? 'door';
             fullCorpus = cabinet.options?.full ?? false;
             insetBack = cabinet.options?.insetBack ?? false;
@@ -130,7 +132,7 @@
         newCabinet.x = x;
         newCabinet.z = z;
         newCabinet.wall = (cabinet as any)?.wall ?? 'north';
-        newCabinet.rotation = cabinet?.rotation ?? 0;
+        newCabinet.rotation = parseInt(rotation);
         newCabinet.validate();
         if (existingCabinet) {
             cabinets.update(prev => prev.map(c => c.id === existingCabinet.id ? newCabinet : c));
@@ -158,6 +160,14 @@
             </label>
             <label class="block">Depth (cm):
                 <input type="number" bind:value={depth} class="border p-1 w-full" required />
+            </label>
+            <label class="block">Rotation (deg):
+                <select bind:value={rotation} class="border p-1 w-full">
+                    <option value="0">0°</option>
+                    <option value="90">90°</option>
+                    <option value="180">180°</option>
+                    <option value="270">270°</option>
+                </select>
             </label>
             <label class="block">Full Corpus:
             <input type="checkbox" bind:checked={fullCorpus} class="border p-1 w-full" />

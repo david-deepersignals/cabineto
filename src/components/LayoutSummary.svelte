@@ -221,20 +221,28 @@ function downloadCSV() {
   a.click();
 }
 
-function panelDadoSvg(p: Panel): string {
+function panelDadoSvg(p: Panel,index: number): string {
   const margin = 150;
   const width = p.length;
   const height = p.width;
   const dadoWidth = p.dados?.[0]?.width || 0;
   const dadoDepth = p.dados?.[0]?.depth || 0;
+  const dadoOffset = p.dados?.[0]?.offset || 0;
   const panelThickness = 20; // Assume panel thickness for cross-section
-
+  
   // Adjust canvas size
   const totalW = width + dadoDepth + margin * 3; // Add space for cross-section to the right
   const totalH = Math.max(height, dadoWidth + panelThickness) + margin * 2;
 
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}">`;
 
+
+  // Add a title to the SVG
+  svg += `<text x="${margin}" y="${margin - 70}" font-size="20" text-anchor="start" dominant-baseline="auto">#${index} ${p.label}</text>`;
+
+  
+  
+  
   // -------------------------------
   // Top View (Main Panel with Dados)
   // -------------------------------
@@ -281,14 +289,19 @@ function panelDadoSvg(p: Panel): string {
 
   if (p.dados && p.dados.length > 0) {
     const crossSectionStartX = margin + width + margin; // Positioned to the right of the top view
-    const crossSectionMarginY = margin; // Aligned vertically with the top view
+    const crossSectionMarginY = margin + 80; // Aligned vertically with the top view
 
     const crossectionScale = 3
-    const crossSectionWidth = 70
+    const crossSectionWidth = 100
 
+    const titleX = crossSectionStartX + crossSectionWidth / 2;
+    const titleY = crossSectionMarginY - 50; // Position the title above the cross-section
+    svg += `<text x="${titleX}" y="${titleY}" font-size="16" text-anchor="middle" dominant-baseline="bottom">Prijesjek</text>`;
 
     // Draw the panel outline (black rectangle)
-    svg += `<rect x="${crossSectionStartX}" y="${crossSectionMarginY}" width="${crossSectionWidth}" height="${p.materialThickness * crossectionScale}" fill="none" stroke="black"/>`;
+    svg += `<line x1="${crossSectionStartX}" y1="${crossSectionMarginY}" x2="${crossSectionStartX + crossSectionWidth}" y2="${crossSectionMarginY}" stroke="black"/>`;
+    svg += `<line x1="${crossSectionStartX}" y1="${crossSectionMarginY + (p.materialThickness * crossectionScale)}" x2="${crossSectionStartX + crossSectionWidth}" y2="${crossSectionMarginY + (p.materialThickness * crossectionScale)}" stroke="black"/>`;
+    svg += `<line x1="${crossSectionStartX}" y1="${crossSectionMarginY}" x2="${crossSectionStartX}" y2="${crossSectionMarginY + (p.materialThickness * crossectionScale)}" stroke="black"/>`;
 
 
     // Perpendicular line (right side of the rectangle) with text in the middle
@@ -299,9 +312,9 @@ function panelDadoSvg(p: Panel): string {
     svg += `<line x1="${lineStartX - 2}" y1="${crossSectionMarginY + (p.materialThickness * crossectionScale)}" x2="${lineStartX + 2}" y2="${crossSectionMarginY + (p.materialThickness * crossectionScale)}" stroke="black"/>`;
     svg += `<text x="${lineStartX + 5}" y="${lineMiddleY}" font-size="12" text-anchor="start" dominant-baseline="middle">${p.materialThickness} mm</text>`;
 
-
+    const dimWidthX = crossSectionStartX + ((dadoOffset * crossectionScale) - dadoWidth);
     // Draw the dado cutout (red rectangle inside the panel)
-    svg += `<rect x="${crossSectionStartX + ((crossSectionWidth /2) - dadoWidth)}" y="${crossSectionMarginY}" width="${dadoWidth * crossectionScale}" height="${dadoDepth * crossectionScale}" fill="none" stroke="red"/>`;
+    svg += `<rect x="${dimWidthX}" y="${crossSectionMarginY}" width="${dadoWidth * crossectionScale}" height="${dadoDepth * crossectionScale}" fill="none" stroke="red"/>`;
 
     // Depth dimension (horizontal, below dado cutout)
     svg += `<line x1="${crossSectionStartX - 10}" y1="${crossSectionMarginY}" x2="${crossSectionStartX - 10}" y2="${crossSectionMarginY + dadoDepth * crossectionScale}" stroke="black"/>`;
@@ -311,13 +324,23 @@ function panelDadoSvg(p: Panel): string {
 
     // Width dimension (vertical, right of the dado cutout)
 
-    const dimWidthX = crossSectionStartX + ((crossSectionWidth /2) - dadoWidth);
+
     svg += `<line x1="${dimWidthX}" y1="${crossSectionMarginY - 10}" x2="${dimWidthX + (dadoWidth * crossectionScale)}" y2="${crossSectionMarginY - 10}" stroke="black"/>`;
     svg += `<line x1="${dimWidthX}" y1="${crossSectionMarginY - 12}" x2="${dimWidthX}" y2="${crossSectionMarginY - 8}" stroke="black"/>`;
     svg += `<line x1="${dimWidthX + (dadoWidth * crossectionScale)}" y1="${crossSectionMarginY - 12}" x2="${dimWidthX + (dadoWidth * crossectionScale)}" y2="${crossSectionMarginY - 8}" stroke="black"/>`;
 
 
     svg += `<text x="${dimWidthX}" y="${crossSectionMarginY - 20}" font-size="12" text-anchor="start" dominant-baseline="middle">${dadoWidth} mm</text>`;
+
+
+
+    svg += `<line x1="${crossSectionStartX}" y1="${crossSectionMarginY - 10}" x2="${crossSectionStartX + (dadoOffset * crossectionScale)}" y2="${crossSectionMarginY - 10}" stroke="black"/>`;
+    svg += `<line x1="${crossSectionStartX}" y1="${crossSectionMarginY - 12}" x2="${crossSectionStartX}" y2="${crossSectionMarginY - 8}" stroke="black"/>`;
+
+
+    svg += `<text x="${crossSectionStartX}" y="${crossSectionMarginY - 20}" font-size="12" text-anchor="start" dominant-baseline="middle">${dadoOffset} mm</text>`;
+    
+    
   }
 
   svg += `</svg>`;
@@ -331,7 +354,7 @@ async function downloadDadoDrawings() {
   $cabinets.forEach(cab => {
     cab.panels().forEach((p: Panel) => {
       if (p.dados && p.dados.length) {
-        const svg = panelDadoSvg(p);
+        const svg = panelDadoSvg(p,index);
         const safeLabel = p.label.replace(/[^a-z0-9]/gi, '_');
         zip.file(`${index}_${safeLabel}.svg`, svg);
         index++;
@@ -827,9 +850,6 @@ function csvMaxMoris() {
       >
         Export {cab.id}
       </button>
-    </div>
-    <div class="text-xs mt-1 text-center">
-      {@html panelDadoSvg(cab.panels()[0])}
     </div>
   {/each}
 </div>

@@ -298,6 +298,169 @@ function csvMaxMoris() {
   <button class="px-4 py-2 bg-blue-600 text-white rounded" on:click={() => dispatch('close')}>Back</button>
 </div>
 
+<h3 class="font-semibold mb-2">3D View</h3>
+<svg
+  bind:this={layoutSvgs['iso']}
+  width={iso.bounds.width + MARGIN * 2}
+  height={iso.bounds.height + MARGIN * 2}
+  style="border:1px solid #000"
+>
+  <defs>
+    <pattern id="hatch-iso" patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="4" stroke="black" stroke-width="0.5" />
+    </pattern>
+  </defs>
+  <g transform={`translate(${MARGIN - iso.bounds.minX},${MARGIN - iso.bounds.minY})`}>
+    {#each iso.cabs as cab}
+      {@const x = cab.x ?? 0}
+      {@const y = cab.y ?? 0}
+      {@const z = (cab.z ?? 0) / $scale}
+      {@const w = cab.w / $scale}
+      {@const d = cab.d / $scale}
+      {@const h = cab.h / $scale}
+      {@const p1 = isoProject(x, y, z)}
+      {@const p2 = isoProject(x + w, y, z)}
+      {@const p3 = isoProject(x + w, y + d, z)}
+      {@const p4 = isoProject(x, y + d, z)}
+      {@const p5 = isoProject(x, y, z + h)}
+      {@const p6 = isoProject(x + w, y, z + h)}
+      {@const p7 = isoProject(x + w, y + d, z + h)}
+      {@const p8 = isoProject(x, y + d, z + h)}
+      <polygon points={`${p5.x},${p5.y} ${p6.x},${p6.y} ${p7.x},${p7.y} ${p8.x},${p8.y}`} fill="none" stroke="black" />
+      <polyline points={`${p1.x},${p1.y} ${p5.x},${p5.y}`} stroke="black" />
+      <polyline points={`${p2.x},${p2.y} ${p6.x},${p6.y}`} stroke="black" />
+      <polyline points={`${p3.x},${p3.y} ${p7.x},${p7.y}`} stroke="black" />
+      <polyline points={`${p4.x},${p4.y} ${p8.x},${p8.y}`} stroke="black" />
+      <polyline points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y} ${p1.x},${p1.y}`} stroke="black" fill="none" />
+
+      {#if cab.type === 'corner' && (cab as any).fixedSide}
+        {@const fixed = (cab as any).fixedSide / $scale}
+        {@const c1 = isoProject(x, y, z + h)}
+        {@const c2 = isoProject(x + fixed, y, z + h)}
+        {@const c3 = isoProject(x + fixed, y + d, z + h)}
+        {@const c4 = isoProject(x, y + d, z + h)}
+        <polygon points={`${c1.x},${c1.y} ${c2.x},${c2.y} ${c3.x},${c3.y} ${c4.x},${c4.y}`} fill="url(#hatch-iso)" />
+        {@const l1 = isoProject(x + fixed, y, z + h)}
+        {@const l2 = isoProject(x + fixed, y + d, z + h)}
+        <line x1={l1.x} y1={l1.y} x2={l2.x} y2={l2.y} stroke="black" stroke-dasharray="4 2" />
+      {/if}
+
+      {#if cab.wall === 'north'}
+        {#if cab.type === 'door' && (cab as any).doors}
+          {#each Array((cab as any).doors - 1) as _, i}
+            {@const xPos = x + w * (i + 1) / (cab as any).doors}
+            {@const pBottom = isoProject(xPos, y + d, z)}
+            {@const pTop = isoProject(xPos, y + d, z + h)}
+            <line x1={pBottom.x} y1={pBottom.y} x2={pTop.x} y2={pTop.y} stroke="black" stroke-dasharray="4 2" />
+          {/each}
+          {#each Array((cab as any).doors) as _, i}
+            {@const doorWidth = w / (cab as any).doors}
+            {@const doorX = x + i * doorWidth}
+            {@const handleX = (cab as any).doors === 1 ? doorX + doorWidth - 5 : i === 0 ? doorX + doorWidth - 5 : doorX + 5}
+            {@const pHandleBottom = isoProject(handleX, y + d, z + h / 2 - 5)}
+            {@const pHandleTop = isoProject(handleX, y + d, z + h / 2 + 5)}
+            <line x1={pHandleBottom.x} y1={pHandleBottom.y} x2={pHandleTop.x} y2={pHandleTop.y} stroke="black" />
+          {/each}
+        {/if}
+
+        {#if cab.type === 'drawer' && (cab as any).heights}
+          {@const heights = (cab as any).heights}
+          {#each heights.slice(0, -1) as _, i}
+            {@const pos = heights.slice(0, i + 1).reduce((a: number, b: number) => a + b, 0)}
+            {@const pLeft = isoProject(x, y + d, z + h * pos / 100)}
+            {@const pRight = isoProject(x + w, y + d, z + h * pos / 100)}
+            <line x1={pLeft.x} y1={pLeft.y} x2={pRight.x} y2={pRight.y} stroke="black" stroke-dasharray="4 2" />
+          {/each}
+          {#each heights as height, i}
+            {@const top = heights.slice(0, i).reduce((a: number, b: number) => a + b, 0)}
+            {@const mid = top + height / 2}
+            {@const pLeft = isoProject(x + w / 2 - 5, y + d, z + h * mid / 100)}
+            {@const pRight = isoProject(x + w / 2 + 5, y + d, z + h * mid / 100)}
+            <line x1={pLeft.x} y1={pLeft.y} x2={pRight.x} y2={pRight.y} stroke="black" />
+          {/each}
+        {/if}
+
+        {#if cab.type === 'oven' && (cab as any).drawerHeight}
+          {@const drawerH = (cab as any).drawerHeight / $scale}
+          {@const pLeft = isoProject(x, y + d, z + drawerH)}
+          {@const pRight = isoProject(x + w, y + d, z + drawerH)}
+          <line x1={pLeft.x} y1={pLeft.y} x2={pRight.x} y2={pRight.y} stroke="black" stroke-dasharray="4 2" />
+          {@const pHandleLeft = isoProject(x + w / 2 - 5, y + d, z + drawerH / 2)}
+          {@const pHandleRight = isoProject(x + w / 2 + 5, y + d, z + drawerH / 2)}
+          <line x1={pHandleLeft.x} y1={pHandleLeft.y} x2={pHandleRight.x} y2={pHandleRight.y} stroke="black" />
+          {@const ovenHeight = h - drawerH}
+          {@const o1 = isoProject(x + w * 0.1, y + d, z + drawerH + ovenHeight * 0.1)}
+          {@const o2 = isoProject(x + w * 0.9, y + d, z + drawerH + ovenHeight * 0.1)}
+          {@const o3 = isoProject(x + w * 0.9, y + d, z + drawerH + ovenHeight * 0.9)}
+          {@const o4 = isoProject(x + w * 0.1, y + d, z + drawerH + ovenHeight * 0.9)}
+          <polygon points={`${o1.x},${o1.y} ${o2.x},${o2.y} ${o3.x},${o3.y} ${o4.x},${o4.y}`} fill="none" stroke="black" />
+          {@const i1 = isoProject(x + w * 0.25, y + d, z + drawerH + ovenHeight * 0.25)}
+          {@const i2 = isoProject(x + w * 0.75, y + d, z + drawerH + ovenHeight * 0.25)}
+          {@const i3 = isoProject(x + w * 0.75, y + d, z + drawerH + ovenHeight * 0.75)}
+          {@const i4 = isoProject(x + w * 0.25, y + d, z + drawerH + ovenHeight * 0.75)}
+          <polygon points={`${i1.x},${i1.y} ${i2.x},${i2.y} ${i3.x},${i3.y} ${i4.x},${i4.y}`} fill="none" stroke="black" />
+        {/if}
+      {:else if cab.wall === 'west'}
+        {#if cab.type === 'door' && (cab as any).doors}
+          {#each Array((cab as any).doors - 1) as _, i}
+            {@const yPos = y + d * (i + 1) / (cab as any).doors}
+            {@const pBottom = isoProject(x + w, yPos, z)}
+            {@const pTop = isoProject(x + w, yPos, z + h)}
+            <line x1={pBottom.x} y1={pBottom.y} x2={pTop.x} y2={pTop.y} stroke="black" stroke-dasharray="4 2" />
+          {/each}
+          {#each Array((cab as any).doors) as _, i}
+            {@const doorWidth = d / (cab as any).doors}
+            {@const doorY = y + i * doorWidth}
+            {@const handleY = (cab as any).doors === 1 ? doorY + doorWidth - 5 : i === 0 ? doorY + doorWidth - 5 : doorY + 5}
+            {@const pHandleBottom = isoProject(x + w, handleY, z + h / 2 - 5)}
+            {@const pHandleTop = isoProject(x + w, handleY, z + h / 2 + 5)}
+            <line x1={pHandleBottom.x} y1={pHandleBottom.y} x2={pHandleTop.x} y2={pHandleTop.y} stroke="black" />
+          {/each}
+        {/if}
+
+        {#if cab.type === 'drawer' && (cab as any).heights}
+          {@const heights = (cab as any).heights}
+          {#each heights.slice(0, -1) as _, i}
+            {@const pos = heights.slice(0, i + 1).reduce((a: number, b: number) => a + b, 0)}
+            {@const pTopLeft = isoProject(x + w, y, z + h * pos / 100)}
+            {@const pTopRight = isoProject(x + w, y + d, z + h * pos / 100)}
+            <line x1={pTopLeft.x} y1={pTopLeft.y} x2={pTopRight.x} y2={pTopRight.y} stroke="black" stroke-dasharray="4 2" />
+          {/each}
+          {#each heights as height, i}
+            {@const top = heights.slice(0, i).reduce((a: number, b: number) => a + b, 0)}
+            {@const mid = top + height / 2}
+            {@const pHandleLeft = isoProject(x + w, y + d / 2 - 5, z + h * mid / 100)}
+            {@const pHandleRight = isoProject(x + w, y + d / 2 + 5, z + h * mid / 100)}
+            <line x1={pHandleLeft.x} y1={pHandleLeft.y} x2={pHandleRight.x} y2={pHandleRight.y} stroke="black" />
+          {/each}
+        {/if}
+
+        {#if cab.type === 'oven' && (cab as any).drawerHeight}
+          {@const drawerH = (cab as any).drawerHeight / $scale}
+          {@const pTopLeft = isoProject(x + w, y, z + drawerH)}
+          {@const pTopRight = isoProject(x + w, y + d, z + drawerH)}
+          <line x1={pTopLeft.x} y1={pTopLeft.y} x2={pTopRight.x} y2={pTopRight.y} stroke="black" stroke-dasharray="4 2" />
+          {@const pHandleLeft = isoProject(x + w, y + d / 2 - 5, z + drawerH / 2)}
+          {@const pHandleRight = isoProject(x + w, y + d / 2 + 5, z + drawerH / 2)}
+          <line x1={pHandleLeft.x} y1={pHandleLeft.y} x2={pHandleRight.x} y2={pHandleRight.y} stroke="black" />
+          {@const ovenHeight = h - drawerH}
+          {@const o1 = isoProject(x + w, y + d * 0.1, z + drawerH + ovenHeight * 0.1)}
+          {@const o2 = isoProject(x + w, y + d * 0.9, z + drawerH + ovenHeight * 0.1)}
+          {@const o3 = isoProject(x + w, y + d * 0.9, z + drawerH + ovenHeight * 0.9)}
+          {@const o4 = isoProject(x + w, y + d * 0.1, z + drawerH + ovenHeight * 0.9)}
+          <polygon points={`${o1.x},${o1.y} ${o2.x},${o2.y} ${o3.x},${o3.y} ${o4.x},${o4.y}`} fill="none" stroke="black" />
+          {@const i1 = isoProject(x + w, y + d * 0.25, z + drawerH + ovenHeight * 0.25)}
+          {@const i2 = isoProject(x + w, y + d * 0.75, z + drawerH + ovenHeight * 0.25)}
+          {@const i3 = isoProject(x + w, y + d * 0.75, z + drawerH + ovenHeight * 0.75)}
+          {@const i4 = isoProject(x + w, y + d * 0.25, z + drawerH + ovenHeight * 0.75)}
+          <polygon points={`${i1.x},${i1.y} ${i2.x},${i2.y} ${i3.x},${i3.y} ${i4.x},${i4.y}`} fill="none" stroke="black" />
+        {/if}
+      {/if}
+    {/each}
+  </g>
+</svg>
+<p>Total width: {totalWidthMm(iso.bounds)} mm, Total height: {totalHeightMm(iso.bounds)} mm</p>
+
 {#each viewConfigs as v}
   {@const data = prepare(v.id)}
   {@const axes = getAxes(v.id)}
@@ -400,152 +563,6 @@ function csvMaxMoris() {
   </svg>
   <p>Total width: {totalWidthMm(data.bounds)} mm, Total height: {totalHeightMm(data.bounds)} mm</p>
 {/each}
-
-<h3 class="font-semibold mb-2">3D View</h3>
-<svg
-  bind:this={layoutSvgs['iso']}
-  width={iso.bounds.width + MARGIN * 2}
-  height={iso.bounds.height + MARGIN * 2}
-  style="border:1px solid #000"
->
-  <g transform={`translate(${MARGIN - iso.bounds.minX},${MARGIN - iso.bounds.minY})`}>
-    {#each iso.cabs as cab}
-      {@const x = cab.x ?? 0}
-      {@const y = cab.y ?? 0}
-      {@const z = (cab.z ?? 0) / $scale}
-      {@const w = cab.w / $scale}
-      {@const d = cab.d / $scale}
-      {@const h = cab.h / $scale}
-      {@const p1 = isoProject(x, y, z)}
-      {@const p2 = isoProject(x + w, y, z)}
-      {@const p3 = isoProject(x + w, y + d, z)}
-      {@const p4 = isoProject(x, y + d, z)}
-      {@const p5 = isoProject(x, y, z + h)}
-      {@const p6 = isoProject(x + w, y, z + h)}
-      {@const p7 = isoProject(x + w, y + d, z + h)}
-      {@const p8 = isoProject(x, y + d, z + h)}
-      <polygon points={`${p5.x},${p5.y} ${p6.x},${p6.y} ${p7.x},${p7.y} ${p8.x},${p8.y}`} fill="none" stroke="black" />
-      <polyline points={`${p1.x},${p1.y} ${p5.x},${p5.y}`} stroke="black" />
-      <polyline points={`${p2.x},${p2.y} ${p6.x},${p6.y}`} stroke="black" />
-      <polyline points={`${p3.x},${p3.y} ${p7.x},${p7.y}`} stroke="black" />
-      <polyline points={`${p4.x},${p4.y} ${p8.x},${p8.y}`} stroke="black" />
-      <polyline points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y} ${p1.x},${p1.y}`} stroke="black" fill="none" />
-
-      {#if cab.wall === 'north'}
-        {#if cab.type === 'door' && (cab as any).doors}
-          {#each Array((cab as any).doors - 1) as _, i}
-            {@const xPos = x + w * (i + 1) / (cab as any).doors}
-            {@const pBottom = isoProject(xPos, y + d, z)}
-            {@const pTop = isoProject(xPos, y + d, z + h)}
-            <line x1={pBottom.x} y1={pBottom.y} x2={pTop.x} y2={pTop.y} stroke="black" stroke-dasharray="4 2" />
-          {/each}
-          {#each Array((cab as any).doors) as _, i}
-            {@const doorWidth = w / (cab as any).doors}
-            {@const doorX = x + i * doorWidth}
-            {@const handleX = (cab as any).doors === 1 ? doorX + doorWidth - 5 : i === 0 ? doorX + doorWidth - 5 : doorX + 5}
-            {@const pHandleBottom = isoProject(handleX, y + d, z + h / 2 - 5)}
-            {@const pHandleTop = isoProject(handleX, y + d, z + h / 2 + 5)}
-            <line x1={pHandleBottom.x} y1={pHandleBottom.y} x2={pHandleTop.x} y2={pHandleTop.y} stroke="black" />
-          {/each}
-        {/if}
-
-        {#if cab.type === 'drawer' && (cab as any).heights}
-          {@const heights = (cab as any).heights}
-          {#each heights.slice(0, -1) as _, i}
-            {@const pos = heights.slice(0, i + 1).reduce((a: number, b: number) => a + b, 0)}
-            {@const pLeft = isoProject(x, y + d, z + h * pos / 100)}
-            {@const pRight = isoProject(x + w, y + d, z + h * pos / 100)}
-            <line x1={pLeft.x} y1={pLeft.y} x2={pRight.x} y2={pRight.y} stroke="black" stroke-dasharray="4 2" />
-          {/each}
-          {#each heights as height, i}
-            {@const top = heights.slice(0, i).reduce((a: number, b: number) => a + b, 0)}
-            {@const mid = top + height / 2}
-            {@const pLeft = isoProject(x + w / 2 - 5, y + d, z + h * mid / 100)}
-            {@const pRight = isoProject(x + w / 2 + 5, y + d, z + h * mid / 100)}
-            <line x1={pLeft.x} y1={pLeft.y} x2={pRight.x} y2={pRight.y} stroke="black" />
-          {/each}
-        {/if}
-
-        {#if cab.type === 'oven' && (cab as any).drawerHeight}
-          {@const drawerH = (cab as any).drawerHeight / $scale}
-          {@const pLeft = isoProject(x, y + d, z + h - drawerH)}
-          {@const pRight = isoProject(x + w, y + d, z + h - drawerH)}
-          <line x1={pLeft.x} y1={pLeft.y} x2={pRight.x} y2={pRight.y} stroke="black" stroke-dasharray="4 2" />
-          {@const pHandleLeft = isoProject(x + w / 2 - 5, y + d, z + h - drawerH / 2)}
-          {@const pHandleRight = isoProject(x + w / 2 + 5, y + d, z + h - drawerH / 2)}
-          <line x1={pHandleLeft.x} y1={pHandleLeft.y} x2={pHandleRight.x} y2={pHandleRight.y} stroke="black" />
-          {@const ovenHeight = h - drawerH}
-          {@const o1 = isoProject(x + w * 0.1, y + d, z + ovenHeight * 0.1)}
-          {@const o2 = isoProject(x + w * 0.9, y + d, z + ovenHeight * 0.1)}
-          {@const o3 = isoProject(x + w * 0.9, y + d, z + ovenHeight * 0.9)}
-          {@const o4 = isoProject(x + w * 0.1, y + d, z + ovenHeight * 0.9)}
-          <polygon points={`${o1.x},${o1.y} ${o2.x},${o2.y} ${o3.x},${o3.y} ${o4.x},${o4.y}`} fill="none" stroke="black" />
-          {@const i1 = isoProject(x + w * 0.25, y + d, z + ovenHeight * 0.25)}
-          {@const i2 = isoProject(x + w * 0.75, y + d, z + ovenHeight * 0.25)}
-          {@const i3 = isoProject(x + w * 0.75, y + d, z + ovenHeight * 0.75)}
-          {@const i4 = isoProject(x + w * 0.25, y + d, z + ovenHeight * 0.75)}
-          <polygon points={`${i1.x},${i1.y} ${i2.x},${i2.y} ${i3.x},${i3.y} ${i4.x},${i4.y}`} fill="none" stroke="black" />
-        {/if}
-      {:else if cab.wall === 'west'}
-        {#if cab.type === 'door' && (cab as any).doors}
-          {#each Array((cab as any).doors - 1) as _, i}
-            {@const yPos = y + d * (i + 1) / (cab as any).doors}
-            {@const pBottom = isoProject(x + w, yPos, z)}
-            {@const pTop = isoProject(x + w, yPos, z + h)}
-            <line x1={pBottom.x} y1={pBottom.y} x2={pTop.x} y2={pTop.y} stroke="black" stroke-dasharray="4 2" />
-          {/each}
-          {#each Array((cab as any).doors) as _, i}
-            {@const doorWidth = d / (cab as any).doors}
-            {@const doorY = y + i * doorWidth}
-            {@const handleY = (cab as any).doors === 1 ? doorY + doorWidth - 5 : i === 0 ? doorY + doorWidth - 5 : doorY + 5}
-            {@const pHandleBottom = isoProject(x + w, handleY, z + h / 2 - 5)}
-            {@const pHandleTop = isoProject(x + w, handleY, z + h / 2 + 5)}
-            <line x1={pHandleBottom.x} y1={pHandleBottom.y} x2={pHandleTop.x} y2={pHandleTop.y} stroke="black" />
-          {/each}
-        {/if}
-
-        {#if cab.type === 'drawer' && (cab as any).heights}
-          {@const heights = (cab as any).heights}
-          {#each heights.slice(0, -1) as _, i}
-            {@const pos = heights.slice(0, i + 1).reduce((a: number, b: number) => a + b, 0)}
-            {@const pTopLeft = isoProject(x + w, y, z + h * pos / 100)}
-            {@const pTopRight = isoProject(x + w, y + d, z + h * pos / 100)}
-            <line x1={pTopLeft.x} y1={pTopLeft.y} x2={pTopRight.x} y2={pTopRight.y} stroke="black" stroke-dasharray="4 2" />
-          {/each}
-          {#each heights as height, i}
-            {@const top = heights.slice(0, i).reduce((a: number, b: number) => a + b, 0)}
-            {@const mid = top + height / 2}
-            {@const pHandleLeft = isoProject(x + w, y + d / 2 - 5, z + h * mid / 100)}
-            {@const pHandleRight = isoProject(x + w, y + d / 2 + 5, z + h * mid / 100)}
-            <line x1={pHandleLeft.x} y1={pHandleLeft.y} x2={pHandleRight.x} y2={pHandleRight.y} stroke="black" />
-          {/each}
-        {/if}
-
-        {#if cab.type === 'oven' && (cab as any).drawerHeight}
-          {@const drawerH = (cab as any).drawerHeight / $scale}
-          {@const pTopLeft = isoProject(x + w, y, z + h - drawerH)}
-          {@const pTopRight = isoProject(x + w, y + d, z + h - drawerH)}
-          <line x1={pTopLeft.x} y1={pTopLeft.y} x2={pTopRight.x} y2={pTopRight.y} stroke="black" stroke-dasharray="4 2" />
-          {@const pHandleLeft = isoProject(x + w, y + d / 2 - 5, z + h - drawerH / 2)}
-          {@const pHandleRight = isoProject(x + w, y + d / 2 + 5, z + h - drawerH / 2)}
-          <line x1={pHandleLeft.x} y1={pHandleLeft.y} x2={pHandleRight.x} y2={pHandleRight.y} stroke="black" />
-          {@const ovenHeight = h - drawerH}
-          {@const o1 = isoProject(x + w, y + d * 0.1, z + ovenHeight * 0.1)}
-          {@const o2 = isoProject(x + w, y + d * 0.9, z + ovenHeight * 0.1)}
-          {@const o3 = isoProject(x + w, y + d * 0.9, z + ovenHeight * 0.9)}
-          {@const o4 = isoProject(x + w, y + d * 0.1, z + ovenHeight * 0.9)}
-          <polygon points={`${o1.x},${o1.y} ${o2.x},${o2.y} ${o3.x},${o3.y} ${o4.x},${o4.y}`} fill="none" stroke="black" />
-          {@const i1 = isoProject(x + w, y + d * 0.25, z + ovenHeight * 0.25)}
-          {@const i2 = isoProject(x + w, y + d * 0.75, z + ovenHeight * 0.25)}
-          {@const i3 = isoProject(x + w, y + d * 0.75, z + ovenHeight * 0.75)}
-          {@const i4 = isoProject(x + w, y + d * 0.25, z + ovenHeight * 0.75)}
-          <polygon points={`${i1.x},${i1.y} ${i2.x},${i2.y} ${i3.x},${i3.y} ${i4.x},${i4.y}`} fill="none" stroke="black" />
-        {/if}
-      {/if}
-    {/each}
-  </g>
-</svg>
-<p>Total width: {totalWidthMm(iso.bounds)} mm, Total height: {totalHeightMm(iso.bounds)} mm</p>
 
 <h3 class="font-semibold mb-2">Cabinet Drawings</h3>
 <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3">

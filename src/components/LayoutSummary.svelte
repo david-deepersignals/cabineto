@@ -315,8 +315,9 @@ function csvMaxMoris() {
       {@const x = cab.x ?? 0}
       {@const y = cab.y ?? 0}
       {@const z = (cab.z ?? 0) / $scale}
-      {@const w = cab.w / $scale}
-      {@const d = cab.d / $scale}
+      {@const dims = cab.rotation === 90 || cab.rotation === 270 ? { w: cab.d, d: cab.w } : { w: cab.w, d: cab.d }}
+      {@const w = dims.w / $scale}
+      {@const d = dims.d / $scale}
       {@const h = cab.h / $scale}
       {@const p1 = isoProject(x, y, z)}
       {@const p2 = isoProject(x + w, y, z)}

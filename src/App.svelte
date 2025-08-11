@@ -66,6 +66,20 @@ function getCabinetHeight(cab: any) {
   return getCabinetHeightRaw(cab) / $scale;
 }
 
+function getCabinetDisplayWidth(cab: any) {
+  // Width used for rendering the cabinet element itself. Unlike
+  // `getCabinetWidth` this ignores the rotation so that the element's
+  // dimensions stay constant and the CSS rotation visually rotates it.
+  return (axes.width === 'w' ? cab.w : cab.d) / $scale;
+}
+
+function getCabinetDisplayHeight(cab: any) {
+  // Height used for rendering the cabinet element itself. This keeps
+  // the raw dimension so that rotation is handled purely via CSS.
+  if (axes.height === 'h') return cab.h / $scale;
+  return (axes.height === 'd' ? cab.d : cab.w) / $scale;
+}
+
 function getCabinetLeft(cab: any) {
   if (view === 'side') {
     const w = getCabinetWidth(cab);
@@ -626,7 +640,7 @@ let showForm = false;
             class="cabinet {isActive(cabinet) ? '' : 'inactive'}"
             role="button"
             tabindex="{index}"
-            style="left: {getCabinetLeft(cabinet)}px; {view === 'top' ? `top: ${getCabinetTop(cabinet)}px; transform-origin: top left; transform: ${getRotationTransform(cabinet.rotation ?? 0)};` : `bottom: ${(cabinet.z ?? 0) / $scale}px;`} width: {getCabinetWidth(cabinet)}px; height: {getCabinetHeight(cabinet)}px; border-color: {view === 'top' && depthMismatch.has(cabinet.id) ? 'red' : undefined};"
+            style="left: {getCabinetLeft(cabinet)}px; {view === 'top' ? `top: ${getCabinetTop(cabinet)}px; transform-origin: top left; transform: ${getRotationTransform(cabinet.rotation ?? 0)};` : `bottom: ${(cabinet.z ?? 0) / $scale}px;`} width: {getCabinetDisplayWidth(cabinet)}px; height: {getCabinetDisplayHeight(cabinet)}px; border-color: {view === 'top' && depthMismatch.has(cabinet.id) ? 'red' : undefined};"
             on:mousedown={(e) => isActive(cabinet) && startDrag(e, cabinet.id)}
           >
             <div class="controls" style={view === 'top' ? `transform: rotate(${- (cabinet.rotation ?? 0)}deg); transform-origin: top left;` : undefined}>

@@ -271,7 +271,7 @@ function panelDadoSvg(p: Panel,index: number): string {
 
     const titleX = crossSectionStartX + crossSectionWidth / 2;
     const titleY = crossSectionMarginY - 50; // Position the title above the cross-section
-    svg += `<text x="${titleX}" y="${titleY}" font-size="16" text-anchor="middle" dominant-baseline="bottom">Prjesjek</text>`;
+    svg += `<text x="${titleX}" y="${titleY}" font-size="16" text-anchor="middle" dominant-baseline="bottom">Prijesjek</text>`;
 
     // Draw the panel outline (black rectangle)
     svg += `<line x1="${crossSectionStartX}" y1="${crossSectionMarginY}" x2="${crossSectionStartX + crossSectionWidth}" y2="${crossSectionMarginY}" stroke="black"/>`;
@@ -868,6 +868,32 @@ function csvMaxMoris() {
           <line x1={endX - offNX * 5} y1={endY - offNY * 5} x2={endX + offNX * 5} y2={endY + offNY * 5} stroke="black" />
           <text x={midX} y={midY} text-anchor="middle" font-size="10">{Math.round(dims.d)} mm</text>
 
+          {#if cab.type === 'door' && (cab as any).doors}
+            {@const doorCount = (cab as any).doors}
+            <text x={midX} y={midY - 40} text-anchor="middle" font-size="10">Doors: {doorCount}</text>
+          {/if}
+
+          {#if cab.type === 'drawer' && (cab as any).drawers}
+            {@const drawerCount = (cab as any).drawers}
+            <text x={midX} y={midY - 20} text-anchor="middle" font-size="10">Drawers: {drawerCount}</text>
+          {/if}
+
+          {#if cab.type === 'drawer' && (cab as any).clearance}
+            {@const clearance = (cab as any).clearance}
+            <text x={midX} y={midY + 20} text-anchor="middle" font-size="10">Clearance: {clearance} mm</text>
+          {/if}
+
+          {#if cab.type === 'oven' && (cab as any).drawerHeight}
+            {@const drawerHeight = (cab as any).drawerHeight}
+            <text x={midX} y={midY + 40} text-anchor="middle" font-size="10">Drawer Height: {drawerHeight} mm</text>
+          {/if}
+
+          {#if cab.type === 'corner' && (cab as any).fixedSide}
+            {@const fixedSide = (cab as any).fixedSide}
+            <text x={midX} y={midY + 60} text-anchor="middle" font-size="10">Fixed Side: {fixedSide} mm</text>
+          {/if}
+          
+          
           
         </g>
       </svg>

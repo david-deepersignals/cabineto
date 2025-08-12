@@ -71,12 +71,25 @@ function getCabinetDisplayWidth(cab: any) {
   // `getCabinetWidth` this ignores the rotation so that the element's
   // dimensions stay constant and the CSS rotation visually rotates it.
   //return (axes.width === 'w' ? cab.w : cab.d) / $scale;
+
+  if(view === 'top'){
+    if(cab.rotation === 90 || cab.rotation === 270){
+      return cab.w / $scale;
+    }
+  }
+
   return (isActive(cab) ? cab.w : cab.d) / $scale;
 }
 
 function getCabinetDisplayHeight(cab: any) {
   // Height used for rendering the cabinet element itself. This keeps
   // the raw dimension so that rotation is handled purely via CSS.
+
+  if(view === 'top'){
+    if(cab.rotation === 90 || cab.rotation === 270){
+      return cab.d / $scale;
+    }
+  }
   if (axes.height === 'h') return cab.h / $scale;
   return (axes.height === 'd' ? cab.d : cab.w) / $scale;
 }
@@ -311,71 +324,57 @@ let showForm = false;
       finalLeft = Math.max(0, Math.min(layoutWidth - w, finalLeft));
       finalTop = Math.max(0, Math.min(layoutHeight - h, finalTop));
 
-      const rect1 = { x: finalLeft, y: finalTop, w, h };
 
-      let collision = false;
-      let bestSnap = null;
 
-      // Check for collisions
-      current.forEach((otherCabinet: any, i) => {
-        if (i === index) return;
+      if (view === 'top') {
+        let leftPos = getCabinetLeft(draggedCabinet);
+        let topPos = getCabinetTop(draggedCabinet);
+        const snapRange = 20;
 
-        const rect2 = getCabinetRect(otherCabinet);
 
-        if (
-                rect1.x < rect2.x + rect2.w &&
-                rect1.x + rect1.w > rect2.x &&
-                rect1.y < rect2.y + rect2.h &&
-                rect1.y + rect1.h > rect2.y
-        ) {
-          collision = true;
+        // Snap to borders
+        if (Math.abs(leftPos) <= snapRange) {
+          leftPos = 0;
+          draggedCabinet.wall = 'west';
+        } else if (Math.abs(layoutWidth - (leftPos + w)) <= snapRange) {
+          leftPos = layoutWidth - w;
+          draggedCabinet.wall = 'east';
+        }
 
-          const snapOptions: [number, number][] = [
-            [rect2.x - rect1.w, rect2.y],         // Snap to left of other
-            [rect2.x + rect2.w, rect2.y],         // Snap to right of other
-            [rect2.x, rect2.y - rect1.h],         // Snap above other
-            [rect2.x, rect2.y + rect2.h],         // Snap below other
-            [rect2.x, rect2.y]                   // Snap to overlap other
-          ];
+        if (Math.abs(topPos) <= snapRange) {
+          topPos = 0;
+          draggedCabinet.wall = 'north';
+        } else if (Math.abs(layoutHeight - (topPos + h)) <= snapRange) {
+          topPos = layoutHeight - h;
+          draggedCabinet.wall = 'south';
+        }
 
-          for (let [snapX, snapY] of snapOptions) {
-            snapX = Math.round(snapX / GRID_SIZE) * GRID_SIZE;
-            snapY = Math.round(snapY / GRID_SIZE) * GRID_SIZE;
+        // Snap to other cabinets
+        $cabinets.forEach((otherCab) => {
+          if (otherCab.id !== draggedCabinet.id) {
+            const otherLeft = otherCab.x ?? 0;
+            const otherTop = otherCab.y ?? 0;
+            const otherWidth = getCabinetDisplayWidth(otherCab);
+            const otherHeight = getCabinetDisplayHeight(otherCab);
 
-            snapX = Math.max(0, Math.min(layoutWidth - rect1.w, snapX));
-            snapY = Math.max(0, Math.min(layoutHeight - rect1.h, snapY));
+            // Snap horizontally
+            if (Math.abs(leftPos - (otherLeft + otherWidth)) <= snapRange) {
+              leftPos = otherLeft + otherWidth;
+            } else if (Math.abs((leftPos + w) - otherLeft) <= snapRange) {
+              leftPos = otherLeft - w;
+            }
 
-            const testRect = { x: snapX, y: snapY, w: rect1.w, h: rect1.h };
-
-            // Check if the new position overlaps with other cabinets
-            const overlap = current.some((other2, j) => {
-              if (j === index || j === i) return false;
-
-            const rect3 = getCabinetRect(other2);
-
-              return (
-                      testRect.x < rect3.x + rect3.w &&
-                      testRect.x + testRect.w > rect3.x &&
-                      testRect.y < rect3.y + rect3.h &&
-                      testRect.y + testRect.h > rect3.y
-              );
-            });
-
-            if (!overlap) {
-              bestSnap = [snapX, snapY];
-              break;
+            // Snap vertically
+            if (Math.abs(topPos - (otherTop + otherHeight)) <= snapRange) {
+              topPos = otherTop + otherHeight;
+            } else if (Math.abs((topPos + h) - otherTop) <= snapRange) {
+              topPos = otherTop - h;
             }
           }
-        }
-      });
+        });
 
-      // Update cabinet position based on collision resolution
-      if (!collision || bestSnap === null) {
-        setCabinetLeft(draggedCabinet, finalLeft, w);
-        setCabinetTop(draggedCabinet, finalTop, h);
-      } else {
-        setCabinetLeft(draggedCabinet, bestSnap[0], w);
-        setCabinetTop(draggedCabinet, bestSnap[1], h);
+        setCabinetLeft(draggedCabinet, leftPos, w);
+        setCabinetTop(draggedCabinet, topPos, h);
       }
 
       if (view === 'top') {

@@ -40,8 +40,9 @@ export abstract class Corpus {
     type?: string;
     options?: CorpusOptions;
     wall?: 'north' | 'south' | 'east' | 'west';
+    isUpper: boolean;
 
-    constructor(id: string, w: number, h: number, d: number, type: string = "corpus", options?: CorpusOptions) {
+    constructor(id: string, w: number, h: number, d: number, type: string = "corpus", options?: CorpusOptions, isUpper: boolean = false) {
         this.id = id;
         this.w = w;
         this.h = h;
@@ -49,6 +50,7 @@ export abstract class Corpus {
         this.rotation = 0;
         this.type = type;
         this.options = options;
+        this.isUpper = isUpper;
     }
 
     abstract validate(): boolean;

@@ -2,6 +2,7 @@
 import Form from "./components/Form.svelte";
 import SettingsModal from "./components/SettingsModal.svelte";
 import LayoutSummary from "./components/LayoutSummary.svelte";
+import CostModal from "./components/CostModal.svelte";
 import BackupModal from "./components/BackupModal.svelte";
 import { cabinets } from './stores/cabinets';
 import { scale } from './stores/scale';
@@ -174,6 +175,7 @@ let showForm = false;
   let showSettings = false;
   let showSummary = false;
   let showBackup = false;
+  let showCost = false;
   let editingCabinet: Corpus | null = null;
 
   const openAddForm = () => {
@@ -592,6 +594,8 @@ let showForm = false;
 
   {#if showSummary}
     <LayoutSummary on:close={() => showSummary = false} />
+  {:else if showCost}
+    <CostModal on:close={() => showCost = false} />
   {:else}
     <div class="flex gap-4 mb-4">
       <button on:click={openAddForm} class="px-4 py-2 bg-blue-600 text-white rounded">
@@ -605,6 +609,9 @@ let showForm = false;
       </button>
       <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => showSummary = true}>
         Layout Summary
+      </button>
+      <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={() => showCost = true}>
+        Cost Summary
       </button>
     </div>
 

@@ -32,7 +32,8 @@ function reviveCabinet(raw: any): Corpus {
         raw.drawers,
         raw.heights ?? [],
         raw.clearance,
-        raw.options
+        raw.options,
+        raw.isUpper
       );
       break;
     case 'corner':
@@ -42,7 +43,8 @@ function reviveCabinet(raw: any): Corpus {
         raw.h,
         raw.d,
         raw.fixedSide,
-        raw.options
+        raw.options,
+        raw.isUpper
       );
       break;
     case 'oven':
@@ -52,16 +54,20 @@ function reviveCabinet(raw: any): Corpus {
         raw.h,
         raw.d,
         raw.clearance,
-        raw.options
+        raw.options,
+        raw.isUpper
       );
       break;
     case 'door':
     default:
-      cab = new DoorCabinet(raw.id, raw.w, raw.h, raw.d, raw.doors, raw.options);
+      cab = new DoorCabinet(raw.id, raw.w, raw.h, raw.d, raw.doors, raw.options, raw.isUpper);
       break;
   }
   cab.x = raw.x;
   cab.y = raw.y;
+  cab.z = raw.z;
+  cab.rotation = raw.rotation;
+  cab.wall = raw.wall;
   cab.validate();
   return cab;
 }

@@ -11,10 +11,11 @@ export class DoorCabinet extends Corpus{
         h: number,
         d: number,
         doors: number,
-        options?: CorpusOptions
+        options?: CorpusOptions,
+        isUpper: boolean = false
 
     ) {
-        super(id, w, h, d, 'door', options);
+        super(id, w, h, d, 'door', options, isUpper);
         this.doors = doors;
     }
 
@@ -32,7 +33,11 @@ export class DoorCabinet extends Corpus{
         const dw = (this.w - totalReveal) / this.doors;
         let dh = this.h - 4;
         if (this.options?.hiddenHandles) {
-            dh -= 40;
+            if (this.isUpper) {
+                dh += 30;
+            } else {
+                dh -= 40;
+            }
         }
         const hinge = dh > dw ? "2xDUZ" : "2xSIR";
         for (let i = 0; i < this.doors; i++) {

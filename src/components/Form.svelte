@@ -24,6 +24,7 @@
     let fullCorpus = false;
     let insetBack = false;
     let hiddenHandles = false;
+    let isUpperCabinet = false;
     let x = 0
     let y = 0
     let z = 0
@@ -42,6 +43,7 @@
             fullCorpus = cabinet.options?.full ?? false;
             insetBack = cabinet.options?.insetBack ?? false;
             hiddenHandles = cabinet.options?.hiddenHandles ?? false;
+            isUpperCabinet = (cabinet as any)?.isUpper ?? false;
             if (type === 'door') {
                 doors = (cabinet as DoorCabinet).doors ?? doors;
             }
@@ -60,6 +62,8 @@
     $: isDoor = type === 'door';
     $: isCorner = type === 'corner';
     $: isOven = type === 'oven';
+    $: isUpperAllowed = isDoor || isCorner;
+    $: if (!isUpperAllowed) isUpperCabinet = false;
 
     const saveCabinet = () => {
         const w = parseFloat(width);
@@ -88,7 +92,8 @@
                 doors ?? 0,
                 {full:fullCorpus,
                 insetBack:insetBack,
-                hiddenHandles:hiddenHandles})
+                hiddenHandles:hiddenHandles},
+                isUpperCabinet)
         } else if (type === "drawer") {
 
             newCabinet = new DrawerCabinet(
@@ -103,7 +108,8 @@
                 drawerClearance || 0,
                 {full:fullCorpus,
                     insetBack:insetBack,
-                    hiddenHandles:hiddenHandles})
+                    hiddenHandles:hiddenHandles},
+                false)
 
         } else if (type === "corner") {
             const fs = parseFloat(fixedSide);
@@ -117,7 +123,8 @@
                 h * 10,
                 d * 10,
                 fs * 10,
-                {full:fullCorpus, insetBack:insetBack, hiddenHandles:hiddenHandles}
+                {full:fullCorpus, insetBack:insetBack, hiddenHandles:hiddenHandles},
+                isUpperCabinet
             );
         } else if (type === "oven") {
             newCabinet = new OvenCabinet(
@@ -126,7 +133,8 @@
                 h * 10,
                 d * 10,
                 0,
-                {full:fullCorpus, insetBack:insetBack, hiddenHandles:hiddenHandles}
+                {full:fullCorpus, insetBack:insetBack, hiddenHandles:hiddenHandles},
+                false,
             );
         } else {
             return;
@@ -182,6 +190,11 @@
             <label class="block">Hidden Handles:
             <input type="checkbox" bind:checked={hiddenHandles} class="border p-1 w-full" />
             </label>
+            {#if isUpperAllowed}
+            <label class="block">Upper Cabinet:
+            <input type="checkbox" bind:checked={isUpperCabinet} class="border p-1 w-full" />
+            </label>
+            {/if}
             <label class="block">Type:
                 <select bind:value={type} class="border p-1 w-full">
                     <option value="door">Door</option>

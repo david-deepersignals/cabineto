@@ -11,9 +11,10 @@ export class CornerCabinet extends Corpus {
         h: number,
         d: number,
         fixedSide: number,
-        options?: CorpusOptions
+        options?: CorpusOptions,
+        isUpper: boolean = false
     ) {
-        super(id, w, h, d, 'corner', options);
+        super(id, w, h, d, 'corner', options, isUpper);
         this.fixedSide = fixedSide;
     }
 
@@ -26,7 +27,11 @@ export class CornerCabinet extends Corpus {
         const doorWidth = this.w - this.fixedSide - 4;
         let doorHeight = this.h - 4;
         if (this.options?.hiddenHandles) {
-            doorHeight -= 40;
+            if (this.isUpper) {
+                doorHeight += 30;
+            } else {
+                doorHeight -= 40;
+            }
         }
         if (doorWidth > 0) {
             const { front } = get(materials);

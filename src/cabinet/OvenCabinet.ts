@@ -12,9 +12,10 @@ export class OvenCabinet extends Corpus {
         h: number,
         d: number,
         clearance: number = 0,
-        options?: CorpusOptions
+        options?: CorpusOptions,
+        isUpper: boolean = false
     ) {
-        super(id, w, h, d, 'oven', options);
+        super(id, w, h, d, 'oven', options, isUpper);
         this.drawerHeight = h - 600;
         this.clearance = clearance;
     }

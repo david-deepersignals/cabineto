@@ -16,8 +16,9 @@ export class DrawerCabinet extends Corpus{
         heights: number[],
         clearance: number,
         options?: CorpusOptions,
+        isUpper: boolean = false,
     ) {
-        super(id, w, h, d, 'drawer', options);
+        super(id, w, h, d, 'drawer', options, isUpper);
         this.drawers = drawers;
         this.heights = heights;
         this.clearance = clearance;
@@ -57,7 +58,7 @@ export class DrawerCabinet extends Corpus{
 
             data.push({
                 length: faceHeight,
-                width: drawerWidth,
+                width: this.w - 4,
                 quantity: 1,
                 edgeBandingLengthRight: 1,
                 edgeBandingLengthLeft: 1,

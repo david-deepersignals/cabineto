@@ -23,6 +23,7 @@
     let fixedSide = '0';
     let fullCorpus = false;
     let insetBack = false;
+    let hiddenHandles = false;
     let x = 0
     let y = 0
     let z = 0
@@ -40,6 +41,7 @@
             type = cabinet.type ?? 'door';
             fullCorpus = cabinet.options?.full ?? false;
             insetBack = cabinet.options?.insetBack ?? false;
+            hiddenHandles = cabinet.options?.hiddenHandles ?? false;
             if (type === 'door') {
                 doors = (cabinet as DoorCabinet).doors ?? doors;
             }
@@ -85,7 +87,8 @@
                 d * 10,
                 doors ?? 0,
                 {full:fullCorpus,
-                insetBack:insetBack})
+                insetBack:insetBack,
+                hiddenHandles:hiddenHandles})
         } else if (type === "drawer") {
 
             newCabinet = new DrawerCabinet(
@@ -99,7 +102,8 @@
                     .filter(v => !isNaN(v)),
                 drawerClearance || 0,
                 {full:fullCorpus,
-                    insetBack:insetBack})
+                    insetBack:insetBack,
+                    hiddenHandles:hiddenHandles})
 
         } else if (type === "corner") {
             const fs = parseFloat(fixedSide);
@@ -113,7 +117,7 @@
                 h * 10,
                 d * 10,
                 fs * 10,
-                {full:fullCorpus, insetBack:insetBack}
+                {full:fullCorpus, insetBack:insetBack, hiddenHandles:hiddenHandles}
             );
         } else if (type === "oven") {
             newCabinet = new OvenCabinet(
@@ -122,7 +126,7 @@
                 h * 10,
                 d * 10,
                 0,
-                {full:fullCorpus, insetBack:insetBack}
+                {full:fullCorpus, insetBack:insetBack, hiddenHandles:hiddenHandles}
             );
         } else {
             return;
@@ -174,6 +178,9 @@
             </label>
             <label class="block">Inset Back:
             <input type="checkbox" bind:checked={insetBack} class="border p-1 w-full" />
+            </label>
+            <label class="block">Hidden Handles:
+            <input type="checkbox" bind:checked={hiddenHandles} class="border p-1 w-full" />
             </label>
             <label class="block">Type:
                 <select bind:value={type} class="border p-1 w-full">

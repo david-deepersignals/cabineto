@@ -47,7 +47,10 @@ export class DrawerCabinet extends Corpus{
         let cumulativeY = 2;
         for (let i = 0; i < this.drawers; i++) {
             const pct = this.heights[i] / 100;
-            const faceHeight = Math.round(pct * usableHeight);
+            let faceHeight = Math.round(pct * usableHeight);
+            if (this.options?.hiddenHandles) {
+                faceHeight -= 40;
+            }
             const internalHeight = faceHeight - 20;
             const innerW = drawerWidth - 2 * clr;
             const innerD = drawerDepth;

@@ -30,7 +30,10 @@ export class DoorCabinet extends Corpus{
         const { front } = get(materials);
         const totalReveal = (this.doors === 1) ? 4 : 6;
         const dw = (this.w - totalReveal) / this.doors;
-        const dh = this.h - 4;
+        let dh = this.h - 4;
+        if (this.options?.hiddenHandles) {
+            dh -= 40;
+        }
         const hinge = dh > dw ? "2xDUZ" : "2xSIR";
         for (let i = 0; i < this.doors; i++) {
             data.push({

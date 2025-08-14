@@ -24,7 +24,10 @@ export class CornerCabinet extends Corpus {
     public panels(): Panel[] {
         const data = super.panels();
         const doorWidth = this.w - this.fixedSide - 4;
-        const doorHeight = this.h - 4;
+        let doorHeight = this.h - 4;
+        if (this.options?.hiddenHandles) {
+            doorHeight -= 40;
+        }
         if (doorWidth > 0) {
             const { front } = get(materials);
             const hinge = doorHeight > doorWidth ? "2xDUZ" : "2xSIR";

@@ -4,6 +4,7 @@ import { materials } from '../stores/materials';
 export interface CorpusOptions {
     full?: boolean;
     insetBack?: boolean;
+    hiddenHandles?: boolean;
 }
 
 export interface Panel {

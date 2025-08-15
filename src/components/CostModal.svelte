@@ -13,6 +13,7 @@ const BOARD_AREA_M2 = (BOARD_W * BOARD_H) / 1_000_000;
 
 interface Rect { w: number; h: number; }
 interface MaterialDetail { material: string; boards: number; cost: number; }
+interface Bom { screws: number; dowels: number; hinges: number; slides: number; }
 
 function packBoards(rects: Rect[]): number {
   const boards: { spaces: Rect[] }[] = [{ spaces: [{ w: BOARD_W, h: BOARD_H }] }];
@@ -70,6 +71,9 @@ function summarizeCosts(cabs: any[], mats: MaterialsState) {
   const grouped: Record<string, Rect[]> = {};
   let edgeBandLength = 0;
   let cutLength = 0;
+  let hinges = 0;
+  let connections = 0;
+  let drawers = 0;
 
   panels.forEach(p => {
     for (let i = 0; i < p.quantity; i++) {
@@ -81,6 +85,10 @@ function summarizeCosts(cabs: any[], mats: MaterialsState) {
     const widthEdges = (p.edgeBandingWidthTop + p.edgeBandingWidthBottom) * p.width;
     edgeBandLength += (lengthEdges + widthEdges) * p.quantity;
     cutLength += 2 * (p.length + p.width) * p.quantity;
+    if (p.hingeLocation) {
+      const match = p.hingeLocation.match(/^(\d+)x/);
+      if (match) hinges += parseInt(match[1]);
+    }
   });
 
   const matDetails: MaterialDetail[] = [];
@@ -97,7 +105,27 @@ function summarizeCosts(cabs: any[], mats: MaterialsState) {
   const edgeBandCost = (edgeBandLength / 1000) * (mats.edgeBandingCostPerMeter || 0);
   const cutCost = (cutLength / 1000) * (mats.cutCostPerMeter || 0);
   const total = materialsCost + edgeBandCost + cutCost;
-  return { materials: matDetails, edgeBandCost, cutCost, materialsCost, total };
+  cabs.forEach((c: any) => {
+    connections += 4;
+    if(!c.full){
+      connections+=2
+    }
+    if (c.type === 'drawer' && c.drawers) {
+      drawers += c.drawers;
+      //connections += c.drawers * 8;
+    }
+    if(c.type === 'oven'){
+      drawers += 1;
+    }
+
+  });
+  const bom: Bom = {
+    screws: connections * 2,
+    dowels: connections * 2,
+    hinges,
+    slides: drawers * 2
+  };
+  return { materials: matDetails, edgeBandCost, cutCost, materialsCost, total, bom };
 }
 
 $: summary = summarizeCosts($cabinets, $materials);
@@ -113,6 +141,15 @@ $: summary = summarizeCosts($cabinets, $materials);
       <div>Edge Banding: ${summary.edgeBandCost.toFixed(2)}</div>
       <div>Cutting: ${summary.cutCost.toFixed(2)}</div>
       <div class="font-bold border-t pt-2">Total: ${summary.total.toFixed(2)}</div>
+      <h4 class="text-md font-semibold mt-2">Hardware BOM</h4>
+      <table class="w-full text-sm">
+        <tbody>
+          <tr><td>Screws</td><td class="text-right">{summary.bom.screws}</td></tr>
+          <tr><td>Wood dowels</td><td class="text-right">{summary.bom.dowels}</td></tr>
+          <tr><td>Hinges</td><td class="text-right">{summary.bom.hinges}</td></tr>
+          <tr><td>Drawer slides</td><td class="text-right">{summary.bom.slides}</td></tr>
+        </tbody>
+      </table>
     </div>
     <div class="flex justify-end mt-4">
       <button class="px-3 py-1 bg-gray-400 text-white rounded" on:click={() => dispatch('close')}>Close</button>

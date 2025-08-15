@@ -21,9 +21,9 @@ export interface MaterialsState {
  * Global material configuration with default thickness values.
  */
 export const materials = writable<MaterialsState>({
-  corpus: { name: 'Corpus', thickness: 18, cost: 0 },
-  front: { name: 'Front', thickness: 19, cost: 0 },
-  back: { name: 'Back', thickness: 3, cost: 0 },
-  edgeBandingCostPerMeter: 0,
-  cutCostPerMeter: 0
+  corpus: { name: 'Corpus', thickness: 18, cost: 1 },
+  front: { name: 'Front', thickness: 18, cost: 1 },
+  back: { name: 'Back', thickness: 3, cost: 1 },
+  edgeBandingCostPerMeter: 1,
+  cutCostPerMeter: 1
 });

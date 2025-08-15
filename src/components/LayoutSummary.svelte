@@ -870,27 +870,27 @@ function csvMaxMoris() {
 
           {#if cab.type === 'door' && (cab as any).doors}
             {@const doorCount = (cab as any).doors}
-            <text x={midX} y={midY - 40} text-anchor="middle" font-size="10">Doors: {doorCount}</text>
+            <text x={midX} y={p5.y - 40} text-anchor="middle" font-size="10">Doors: {doorCount}</text>
           {/if}
 
           {#if cab.type === 'drawer' && (cab as any).drawers}
             {@const drawerCount = (cab as any).drawers}
-            <text x={midX} y={midY - 20} text-anchor="middle" font-size="10">Drawers: {drawerCount}</text>
+            <text x={midX} y={p5.y - 20} text-anchor="middle" font-size="10">Drawers: {drawerCount}</text>
           {/if}
 
           {#if cab.type === 'drawer' && (cab as any).clearance}
             {@const clearance = (cab as any).clearance}
-            <text x={midX} y={midY + 20} text-anchor="middle" font-size="10">Clearance: {clearance} mm</text>
+            <text x={midX} y={p5.y + 20} text-anchor="middle" font-size="10">Clearance: {clearance} mm</text>
           {/if}
 
           {#if cab.type === 'oven' && (cab as any).drawerHeight}
             {@const drawerHeight = (cab as any).drawerHeight}
-            <text x={midX} y={midY + 40} text-anchor="middle" font-size="10">Drawer Height: {drawerHeight} mm</text>
+            <text x={midX} y={p5.y + 40} text-anchor="middle" font-size="10">Drawer Height: {drawerHeight} mm</text>
           {/if}
 
           {#if cab.type === 'corner' && (cab as any).fixedSide}
             {@const fixedSide = (cab as any).fixedSide}
-            <text x={midX} y={midY + 60} text-anchor="middle" font-size="10">Fixed Side: {fixedSide} mm</text>
+            <text x={midX} y={p5.y + 60} text-anchor="middle" font-size="10">Fixed Side: {fixedSide} mm</text>
           {/if}
           
           

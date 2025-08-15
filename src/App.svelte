@@ -9,7 +9,7 @@ import { scale } from './stores/scale';
 import { room } from './stores/room';
 import type { Corpus } from './cabinet/Corpus';
 
-const GRID_SIZE = 10;
+const GRID_SIZE = 1;
 let layoutWidthMm = 1000;
 let layoutHeightMm = 500;
 let layout: HTMLDivElement;
@@ -42,29 +42,32 @@ function viewChange(v: View){
 
 $: axes = getAxes(view);
 
-function getOrientedDims(cab: any) {
-  return cab.rotation === 90 || cab.rotation === 270
-    ? { w: cab.d, d: cab.w }
-    : { w: cab.w, d: cab.d };
-}
-
 function getCabinetWidthRaw(cab: any) {
-  const dims = getOrientedDims(cab);
-  return axes.width === 'w' ? dims.w : dims.d;
+  if(view === 'top' || view === 'front'){
+    if(cab.rotation === 90 || cab.rotation === 270){
+      return cab.d;
+    }else {
+      return cab.w;
+    }
+  }
+  if (view === 'side'){
+      if(cab.rotation === 90 || cab.rotation === 270){
+        return cab.w;
+      }else {
+        return cab.d;
+      }
+  }
 }
 
 function getCabinetHeightRaw(cab: any) {
-  if (axes.height === 'h') return cab.h;
-  const dims = getOrientedDims(cab);
-  return dims.d;
-}
-
-function getCabinetWidth(cab: any) {
-  return getCabinetWidthRaw(cab) / $scale;
-}
-
-function getCabinetHeight(cab: any) {
-  return getCabinetHeightRaw(cab) / $scale;
+  if(view === 'top'){
+    if(cab.rotation === 90 || cab.rotation === 270){
+      return cab.w;
+    }else {
+      return cab.d;
+    }
+  }
+  return cab.h;
 }
 
 function getCabinetDisplayWidth(cab: any) {
@@ -73,26 +76,14 @@ function getCabinetDisplayWidth(cab: any) {
   // dimensions stay constant and the CSS rotation visually rotates it.
   //return (axes.width === 'w' ? cab.w : cab.d) / $scale;
 
-  if(view === 'top'){
-    if(cab.rotation === 90 || cab.rotation === 270){
-      return cab.w / $scale;
-    }
-  }
-
-  return (isActive(cab) ? cab.w : cab.d) / $scale;
+  return getCabinetWidthRaw(cab) / $scale;
 }
 
 function getCabinetDisplayHeight(cab: any) {
   // Height used for rendering the cabinet element itself. This keeps
   // the raw dimension so that rotation is handled purely via CSS.
 
-  if(view === 'top'){
-    if(cab.rotation === 90 || cab.rotation === 270){
-      return cab.d / $scale;
-    }
-  }
-  if (axes.height === 'h') return cab.h / $scale;
-  return (axes.height === 'd' ? cab.d : cab.w) / $scale;
+  return getCabinetHeightRaw(cab) / $scale;
 }
 
 function getCabinetLeft(cab: any) {
@@ -114,7 +105,7 @@ function setCabinetLeft(cab: any, left: number, w: number) {
 function getCabinetTop(cab: any) {
   if (view === 'top') return cab[axes.top] ?? 0;
   const bottom = (cab.z ?? 0) / $scale;
-  const h = getCabinetHeight(cab);
+  const h = getCabinetDisplayHeight(cab);
   return layoutHeight - bottom - h;
 }
 
@@ -124,29 +115,6 @@ function setCabinetTop(cab: any, top: number, h: number) {
   } else {
     cab.z = layoutHeightMm - (top + h) * $scale;
   }
-}
-
-function getRotationTransform(rot: number) {
-  const angle = ((rot % 360) + 360) % 360;
-  switch (angle) {
-    case 90:
-      return 'rotate(90deg) translate(0, -100%)';
-    case 180:
-      return 'rotate(180deg) translate(-100%, -100%)';
-    case 270:
-      return 'rotate(270deg) translate(-100%, 0)';
-    default:
-      return '';
-  }
-}
-
-function getCabinetRect(cab: any) {
-  return {
-    x: getCabinetLeft(cab),
-    y: getCabinetTop(cab),
-    w: getCabinetDisplayWidth(cab) || 100,
-    h: getCabinetDisplayHeight(cab) || 100
-  };
 }
 
 function isAligned(cab: any) {
@@ -211,8 +179,8 @@ let showForm = false;
       if (index !== -1) {
         const cab: any = current[index];
         cab.rotation = ((cab.rotation ?? 0) + 90) % 360;
-        const w = getCabinetWidth(cab);
-        const h = getCabinetHeight(cab);
+        const w = getCabinetDisplayWidth(cab);
+        const h = getCabinetDisplayHeight(cab);
         cab.x = Math.max(0, Math.min(layoutWidth - w, cab.x ?? 0));
         cab.y = Math.max(0, Math.min(layoutHeight - h, cab.y ?? 0));
         let leftPos = cab.x ?? 0;
@@ -317,14 +285,10 @@ let showForm = false;
       if (index === -1) return current;
 
       const draggedCabinet: any = current[index];
-      let finalLeft = Math.round((getCabinetLeft(draggedCabinet) / GRID_SIZE)) * GRID_SIZE;
-      let finalTop = Math.round((getCabinetTop(draggedCabinet) / GRID_SIZE)) * GRID_SIZE;
 
       const w = getCabinetDisplayWidth(draggedCabinet) || 100;
       const h = getCabinetDisplayHeight(draggedCabinet) || 100;
 
-      finalLeft = Math.max(0, Math.min(layoutWidth - w, finalLeft));
-      finalTop = Math.max(0, Math.min(layoutHeight - h, finalTop));
 
 
 
@@ -332,56 +296,6 @@ let showForm = false;
         let leftPos = getCabinetLeft(draggedCabinet);
         let topPos = getCabinetTop(draggedCabinet);
         const snapRange = 20;
-
-
-        // Snap to borders
-        if (Math.abs(leftPos) <= snapRange) {
-          leftPos = 0;
-          draggedCabinet.wall = 'west';
-        } else if (Math.abs(layoutWidth - (leftPos + w)) <= snapRange) {
-          leftPos = layoutWidth - w;
-          draggedCabinet.wall = 'east';
-        }
-
-        if (Math.abs(topPos) <= snapRange) {
-          topPos = 0;
-          draggedCabinet.wall = 'north';
-        } else if (Math.abs(layoutHeight - (topPos + h)) <= snapRange) {
-          topPos = layoutHeight - h;
-          draggedCabinet.wall = 'south';
-        }
-
-        // Snap to other cabinets
-        $cabinets.forEach((otherCab) => {
-          if (otherCab.id !== draggedCabinet.id) {
-            const otherLeft = otherCab.x ?? 0;
-            const otherTop = otherCab.y ?? 0;
-            const otherWidth = getCabinetDisplayWidth(otherCab);
-            const otherHeight = getCabinetDisplayHeight(otherCab);
-
-            // Snap horizontally
-            if (Math.abs(leftPos - (otherLeft + otherWidth)) <= snapRange) {
-              leftPos = otherLeft + otherWidth;
-            } else if (Math.abs((leftPos + w) - otherLeft) <= snapRange) {
-              leftPos = otherLeft - w;
-            }
-
-            // Snap vertically
-            if (Math.abs(topPos - (otherTop + otherHeight)) <= snapRange) {
-              topPos = otherTop + otherHeight;
-            } else if (Math.abs((topPos + h) - otherTop) <= snapRange) {
-              topPos = otherTop - h;
-            }
-          }
-        });
-
-        setCabinetLeft(draggedCabinet, leftPos, w);
-        setCabinetTop(draggedCabinet, topPos, h);
-      }
-
-      if (view === 'top') {
-        let leftPos = getCabinetLeft(draggedCabinet);
-        let topPos = getCabinetTop(draggedCabinet);
         const distances = [
           { side: 'west', val: leftPos },
           { side: 'north', val: topPos },
@@ -407,9 +321,38 @@ let showForm = false;
             draggedCabinet.wall = 'south';
             break;
         }
+
+
+
+        // Snap to other cabinets
+        $cabinets.forEach((otherCab) => {
+          if (otherCab.id !== draggedCabinet.id && otherCab.z === draggedCabinet.z) {
+            const otherLeft = getCabinetLeft(otherCab);
+            const otherTop =getCabinetTop(otherCab);
+            const otherWidth = getCabinetDisplayWidth(otherCab);
+            const otherHeight = getCabinetDisplayHeight(otherCab);
+
+            // Snap horizontally
+            if (Math.abs(leftPos - (otherLeft + otherWidth)) <= snapRange) {
+              leftPos = otherLeft + otherWidth;
+            } else if (!(leftPos + w <= otherLeft || otherLeft + otherWidth <= leftPos) && topPos === otherTop) {
+              leftPos = otherLeft + otherWidth;
+              console.log(otherCab.id,leftPos, otherLeft, otherWidth)
+            }
+
+            // Snap vertically
+            if (Math.abs(topPos - (otherTop + otherHeight)) <= snapRange) {
+              topPos = otherTop + otherHeight;
+            } else if ((!(topPos + h <= otherTop || otherTop + otherHeight <= topPos)) && leftPos === otherLeft) {
+              topPos = otherTop + otherHeight;
+            }
+          }
+        });
+
         setCabinetLeft(draggedCabinet, leftPos, w);
         setCabinetTop(draggedCabinet, topPos, h);
       }
+
 
       current[index] = draggedCabinet;
       return [...current];
@@ -435,15 +378,15 @@ let showForm = false;
       const list = $cabinets;
       for (let i = 0; i < list.length; i++) {
         const a: any = list[i];
-        const aw = getCabinetWidth(a);
-        const ah = getCabinetHeight(a);
+        const aw = getCabinetDisplayWidth(a);
+        const ah = getCabinetDisplayHeight(a);
         const adepth = (a.rotation === 90 || a.rotation === 270) ? a.w : a.d;
         const ax = a.x ?? 0;
         const ay = a.y ?? 0;
         for (let j = i + 1; j < list.length; j++) {
           const b: any = list[j];
-          const bw = getCabinetWidth(b);
-          const bh = getCabinetHeight(b);
+          const bw = getCabinetDisplayWidth(b);
+          const bh = getCabinetDisplayHeight(b);
           const bdepth = (b.rotation === 90 || b.rotation === 270) ? b.w : b.d;
           const bx = b.x ?? 0;
           const by = b.y ?? 0;
@@ -457,6 +400,18 @@ let showForm = false;
       }
     }
   }
+
+function getCabinetFrontBorder(cabinet: Corpus) {
+    if (cabinet.rotation === 90){
+      return 'border-l-4 border-double border-black'
+    }else if(cabinet.rotation === 180){
+      return 'border-t-4 border-double border-black'
+  }else if (cabinet.rotation === 270){
+      return 'border-r-4 border-double border-black'
+    }
+
+  return 'border-b-4 border-double border-black'
+}
 
 </script>
 
@@ -476,7 +431,6 @@ let showForm = false;
   }
   .cabinet {
     position: absolute;
-    border: 2px solid #444;
     background: linear-gradient(135deg, rgba(100,150,240,0.6), rgba(100,150,240,0.3));
     box-shadow: 3px 3px 4px rgba(0,0,0,0.2);
     padding: 4px;
@@ -498,7 +452,7 @@ let showForm = false;
     display: flex;
     gap: 2px;
   }
-  .cabinet .controls button {
+.controls button {
     background: #fff;
     border: 1px solid #ccc;
     padding: 0 2px;
@@ -644,13 +598,13 @@ let showForm = false;
         {/if}
         {#each $cabinets as cabinet, index}
           <div
-            class="cabinet {isActive(cabinet) ? '' : 'inactive'}"
+            class="cabinet {isActive(cabinet) ? '' : 'inactive'} {getCabinetFrontBorder(cabinet)}"
             role="button"
             tabindex="{index}"
-            style="left: {getCabinetLeft(cabinet)}px; {view === 'top' ? `top: ${getCabinetTop(cabinet)}px; transform-origin: top left; transform: ${getRotationTransform(cabinet.rotation ?? 0)};` : `bottom: ${(cabinet.z ?? 0) / $scale}px;`} width: {getCabinetDisplayWidth(cabinet)}px; height: {getCabinetDisplayHeight(cabinet)}px; border-color: {view === 'top' && depthMismatch.has(cabinet.id) ? 'red' : undefined};"
+            style="left: {getCabinetLeft(cabinet)}px; {view === 'top' ? `top: ${getCabinetTop(cabinet)}px; transform-origin: top left;` : `bottom: ${(cabinet.z ?? 0) / $scale}px;`} width: {getCabinetDisplayWidth(cabinet)}px; height: {getCabinetDisplayHeight(cabinet)}px; border-color: {view === 'top' && depthMismatch.has(cabinet.id) ? 'red' : undefined};"
             on:mousedown={(e) => isActive(cabinet) && startDrag(e, cabinet.id)}
           >
-            <div class="controls" style={view === 'top' ? `transform: rotate(${- (cabinet.rotation ?? 0)}deg); transform-origin: top left;` : undefined}>
+            <div class="controls">
               {#if view === 'top'}
                 <button on:click|stopPropagation={() => rotateCabinet(cabinet.id)}>↺</button>
               {/if}
@@ -683,14 +637,14 @@ let showForm = false;
       </div>
       <div class="dim-x">
           {#each $cabinets as cab}
-            <div class="tick" style="left: {getCabinetLeft(cab) + (getCabinetWidth(cab) / 2)}px;">
+            <div class="tick" style="left: {getCabinetLeft(cab) + (getCabinetDisplayWidth(cab) / 2)}px;">
               <span>{Math.round(getCabinetWidthRaw(cab))}</span>
             </div>
           {/each}
       </div>
       <div class="dim-y">
           {#each $cabinets as cab}
-            <div class="tick" style="top: {getCabinetTop(cab) + (getCabinetHeight(cab) / 2)}px;">
+            <div class="tick" style="top: {getCabinetTop(cab) + (getCabinetDisplayHeight(cab) / 2)}px;">
               <span>{Math.round(getCabinetHeightRaw(cab))}</span>
             </div>
           {/each}

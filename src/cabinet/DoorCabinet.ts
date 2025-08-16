@@ -36,7 +36,7 @@ export class DoorCabinet extends Corpus{
             if (this.isUpper) {
                 dh += 30;
             } else {
-                dh -= 40;
+                dh -= 35;
             }
         }
         const hinge = dh > dw ? "2xDUZ" : "2xSIR";

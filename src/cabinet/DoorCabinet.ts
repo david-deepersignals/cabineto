@@ -1,6 +1,7 @@
 import {Corpus, type CorpusOptions, type Panel} from "./Corpus";
 import { get } from 'svelte/store';
 import { materials } from '../stores/materials';
+import {HIDDEN_HANDEL_REVEAL} from "./config";
 
 export class DoorCabinet extends Corpus{
     doors?: number;
@@ -28,15 +29,15 @@ export class DoorCabinet extends Corpus{
         if(this.doors === undefined) {
             return data;
         }
-        const { front } = get(materials);
+        const { front, corpus } = get(materials);
         const totalReveal = (this.doors === 1) ? 4 : 6;
         const dw = (this.w - totalReveal) / this.doors;
-        let dh = this.h - 4;
+        let dh = this.h - 2;
         if (this.options?.hiddenHandles) {
             if (this.isUpper) {
-                dh += 30;
+                dh += corpus.thickness;
             } else {
-                dh -= 35;
+                dh -= HIDDEN_HANDEL_REVEAL;
             }
         }
         const hinge = dh > dw ? "2xDUZ" : "2xSIR";

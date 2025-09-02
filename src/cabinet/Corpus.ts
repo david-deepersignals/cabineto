@@ -67,7 +67,7 @@ export abstract class Corpus {
             quantity: 2,
             edgeBandingLengthRight: 1,
             edgeBandingLengthLeft: 0,
-            edgeBandingWidthBottom: 0,
+            edgeBandingWidthBottom: 1,
             edgeBandingWidthTop: 1,
             label: `${this.id}-> Side panel`,
             hingeLocation: "",
@@ -133,9 +133,7 @@ export abstract class Corpus {
                 material: corpus.name,
                 materialThickness: corpus.thickness,
             };
-            if (this.options?.insetBack) {
-                topRear.dados = [dadoSpec];
-            }
+
             data.push(topRear);
 
             data.push({
@@ -154,9 +152,12 @@ export abstract class Corpus {
         }
 
         if (this.options?.insetBack) {
+            //If it is a full cabinet than make it 6 mm oversize as dado is 7mm deep
+            //If not make it 1 thickness + 5 mm oversize
+            const height = this.options?.full ? this.h - (2 * t) + 12 : (this.h - t) + 5;
             data.push({
-                length: this.w - 2 * t + 12,
-                width: this.h - 2 * t + 12,
+                length: this.w - (2 * t) + 12,
+                width: height,
                 quantity: 1,
                 edgeBandingLengthRight: 0,
                 edgeBandingLengthLeft: 0,
@@ -169,8 +170,8 @@ export abstract class Corpus {
             });
         } else {
             data.push({
-                length: this.w - t,
-                width: this.h - t,
+                length: this.w - (t * 2),
+                width: this.h - (t * 2),
                 quantity: 1,
                 edgeBandingLengthRight: 0,
                 edgeBandingLengthLeft: 0,

@@ -1,11 +1,14 @@
 import { Corpus, type CorpusOptions, type Panel } from "./Corpus";
 import { get } from 'svelte/store';
 import { materials } from '../stores/materials';
+import { createDrawerPanels } from './drawerHelper';
+import {HIDDEN_HANDEL_REVEAL} from "./config";
 
 export class DrawerCabinet extends Corpus{
     drawers?: number;
     heights?: number[];
-    clearance?: number;
+    drawerSystem: 'standard' | 'metabox';
+    metaboxType: number;
 
     constructor(
         id: string,
@@ -14,14 +17,16 @@ export class DrawerCabinet extends Corpus{
         d: number,
         drawers: number,
         heights: number[],
-        clearance: number,
+        drawerSystem: 'standard' | 'metabox',
+        metaboxType: number = 400,
         options?: CorpusOptions,
         isUpper: boolean = false,
     ) {
         super(id, w, h, d, 'drawer', options, isUpper);
         this.drawers = drawers;
         this.heights = heights;
-        this.clearance = clearance;
+        this.drawerSystem = drawerSystem;
+        this.metaboxType = metaboxType;
     }
 
     validate(){
@@ -39,77 +44,30 @@ export class DrawerCabinet extends Corpus{
         if(this.drawers === undefined || this.heights === undefined) {
             return data;
         }
-        const { corpus, back, front } = get(materials);
+        const { corpus, back } = get(materials);
         const t = corpus.thickness;
-        const usableHeight = this.h - ((this.drawers + 1) * 2);
-        const drawerWidth = this.w - 2 * t;
-        const drawerDepth = this.d - back.thickness - 20;
-        const clr = this.clearance || 0;
-        let cumulativeY = 2;
+        const usableHeight = this.h - (this.options?.hiddenHandles ? 0 : ((this.drawers + 1) * 2));
+        const corpusInnerWidth = this.w - 2 * t;
+        const corpusInnerDepth = this.d - back.thickness - (this.options?.insetBack == true ? (15 + back.thickness) : 0);
         for (let i = 0; i < this.drawers; i++) {
             const pct = this.heights[i] / 100;
             let faceHeight = Math.round(pct * usableHeight);
             if (this.options?.hiddenHandles) {
-                faceHeight -= 35;
+                faceHeight -= HIDDEN_HANDEL_REVEAL;
             }
-            const internalHeight = faceHeight - 20;
-            const innerW = drawerWidth - 2 * clr;
-            const innerD = drawerDepth;
 
-            data.push({
-                length: faceHeight,
-                width: this.w - 4,
-                quantity: 1,
-                edgeBandingLengthRight: 1,
-                edgeBandingLengthLeft: 1,
-                edgeBandingWidthBottom: 1,
-                edgeBandingWidthTop: 1,
-                label: `${this.id}-> Drawer ${i + 1} Face`,
-                hingeLocation: "",
-                material: front.name,
-                materialThickness: front.thickness,
-            });
-            data.push({
-                length: internalHeight,
-                width: innerD,
-                quantity: 2,
-                edgeBandingLengthRight: 1,
-                edgeBandingLengthLeft: 0,
-                edgeBandingWidthBottom: 0,
-                edgeBandingWidthTop: 1,
-                label: `${this.id}-> Drawer ${i + 1} Side`,
-                hingeLocation: "",
-                material: corpus.name,
-                materialThickness: corpus.thickness,
-            });
-            data.push({
-                length: internalHeight,
-                width: innerW,
-                quantity: 1,
-                edgeBandingLengthRight: 0,
-                edgeBandingLengthLeft: 0,
-                edgeBandingWidthBottom: 0,
-                edgeBandingWidthTop: 1,
-                label: `${this.id}-> Drawer ${i + 1} Back`,
-                hingeLocation: "",
-                material: corpus.name,
-                materialThickness: corpus.thickness,
-            });
-            data.push({
-                length: innerW,
-                width: innerD,
-                quantity: 1,
-                edgeBandingLengthRight: 0,
-                edgeBandingLengthLeft: 0,
-                edgeBandingWidthBottom: 0,
-                edgeBandingWidthTop: 0,
-                label: `${this.id}-> Drawer ${i + 1} Bottom`,
-                hingeLocation: "",
-                material: back.name,
-                materialThickness: back.thickness,
-            });
-
-            cumulativeY += faceHeight + 2;
+            data.push(
+                ...createDrawerPanels({
+                    id: this.id,
+                    index: i + 1,
+                    faceHeight,
+                    faceWidth: this.w - 4,
+                    drawerSystem: this.drawerSystem,
+                    internalCorpusWidth: corpusInnerWidth,
+                    internalCorpusDepth: corpusInnerDepth,
+                    sliderLenght: this.metaboxType,
+                })
+            );
         }
         return data;
     }

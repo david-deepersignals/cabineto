@@ -6,6 +6,7 @@
     import {CornerCabinet} from "../cabinet/CornerCabinet";
     import {OvenCabinet} from "../cabinet/OvenCabinet";
     import { cabinets } from '../stores/cabinets';
+    import { SLIDER_LENGHTS } from "../cabinet/drawerHelper";
 
     const dispatch = createEventDispatcher();
 
@@ -19,7 +20,8 @@
     let doors = 2;
     let drawers = 3;
     let drawerHeights = '30,30,40';
-    let drawerClearance = 12;
+    let drawerSystem: 'standard' | 'metabox' | 'vertex' = 'standard';
+    let metaboxType = '400';
     let fixedSide = '0';
     let fullCorpus = false;
     let insetBack = false;
@@ -50,10 +52,15 @@
             if (type === 'drawer') {
                 drawers = (cabinet as DrawerCabinet).drawers ?? drawers;
                 drawerHeights = (cabinet as DrawerCabinet).heights?.join(',') ?? drawerHeights;
-                drawerClearance = (cabinet as DrawerCabinet).clearance ?? drawerClearance;
+                drawerSystem = (cabinet as DrawerCabinet).drawerSystem ?? 'standard';
+                metaboxType = ((cabinet as DrawerCabinet).metaboxType ?? 400).toString();
             }
             if (type === 'corner') {
                 fixedSide = ((cabinet as CornerCabinet).fixedSide / 10).toString();
+            }
+            if (type === 'oven') {
+                drawerSystem = (cabinet as OvenCabinet).drawerSystem ?? 'standard';
+                metaboxType = ((cabinet as OvenCabinet).metaboxType ?? 400).toString();
             }
         }
     });
@@ -105,7 +112,8 @@
                 drawerHeights.split(',')
                     .map(s => parseFloat(s.trim()))
                     .filter(v => !isNaN(v)),
-                drawerClearance || 0,
+                drawerSystem,
+                parseInt(metaboxType),
                 {full:fullCorpus,
                     insetBack:insetBack,
                     hiddenHandles:hiddenHandles},
@@ -132,7 +140,8 @@
                 w * 10,
                 h * 10,
                 d * 10,
-                0,
+                drawerSystem,
+                parseInt(metaboxType),
                 {full:fullCorpus, insetBack:insetBack, hiddenHandles:hiddenHandles},
                 false,
             );
@@ -220,9 +229,39 @@
                 <label class="block">Heights (comma-separated %):
                     <input type="text" bind:value={drawerHeights} class="border p-1 w-full" />
                 </label>
-                <label class="block">Slider Clearance (mm per side):
-                    <input type="number" bind:value={drawerClearance} class="border p-1 w-full" />
+                <label class="block">Drawer System:
+                    <select bind:value={drawerSystem} class="border p-1 w-full">
+                        <option value="standard">Wooden</option>
+                        <option value="metabox">Metabox</option>
+                        <option value="vertex">Vertex</option>
+                    </select>
                 </label>
+                {#if drawerSystem === 'metabox' || drawerSystem === 'vertex'}
+                <label class="block">Metabox Type:
+                    <select bind:value={metaboxType} class="border p-1 w-full">
+                        {#each SLIDER_LENGHTS as t}
+                            <option value={t}>{t} mm</option>
+                        {/each}
+                    </select>
+                </label>
+                {/if}
+            {/if}
+            {#if isOven}
+                <label class="block">Drawer System:
+                    <select bind:value={drawerSystem} class="border p-1 w-full">
+                        <option value="standard">Wooden</option>
+                        <option value="metabox">Metabox</option>
+                    </select>
+                </label>
+                {#if drawerSystem === 'metabox'}
+                <label class="block">Metabox Type:
+                    <select bind:value={metaboxType} class="border p-1 w-full">
+                        {#each SLIDER_LENGHTS as t}
+                            <option value={t}>{t} mm</option>
+                        {/each}
+                    </select>
+                </label>
+                {/if}
             {/if}
             <div class="flex justify-end gap-2 pt-2">
                 <button class="px-3 py-1 bg-gray-400 text-white rounded" on:click={() => dispatch('close')}>Cancel</button>

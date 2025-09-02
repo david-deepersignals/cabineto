@@ -1,0 +1,1 @@
+export const HIDDEN_HANDEL_REVEAL = 35

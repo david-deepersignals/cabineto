@@ -8,12 +8,15 @@
     let corpus = $materials.corpus.thickness.toString();
     let front = $materials.front.thickness.toString();
     let back = $materials.back.thickness.toString();
+    let drawer = $materials.drawer.thickness.toString();
     let corpusName = $materials.corpus.name;
     let frontName = $materials.front.name;
     let backName = $materials.back.name;
+    let drawerName = $materials.drawer.name;
     let corpusCost = ($materials.corpus.cost ?? 0).toString();
     let frontCost = ($materials.front.cost ?? 0).toString();
     let backCost = ($materials.back.cost ?? 0).toString();
+    let drawerCost = ($materials.drawer.cost ?? 0).toString();
     let edgeBandCost = ($materials.edgeBandingCostPerMeter ?? 0).toString();
     let cutCost = ($materials.cutCostPerMeter ?? 0).toString();
 
@@ -26,6 +29,7 @@
             corpus: { name: corpusName, thickness: parseFloat(corpus) || 18, cost: parseFloat(corpusCost) || 0 },
             front: { name: frontName, thickness: parseFloat(front) || 19, cost: parseFloat(frontCost) || 0 },
             back: { name: backName, thickness: parseFloat(back) || 3, cost: parseFloat(backCost) || 0 },
+            drawer: { name: drawerName, thickness: parseFloat(drawer) || 16, cost: parseFloat(drawerCost) || 0 },
             edgeBandingCostPerMeter: parseFloat(edgeBandCost) || 0,
             cutCostPerMeter: parseFloat(cutCost) || 0
         });
@@ -82,6 +86,15 @@
                 </label>
                 <label class="block">Back Cost (per m²):
                     <input type="number" bind:value={backCost} class="border p-1 w-full" />
+                </label>
+                <label class="block">Drawer Name:
+                    <input type="text" bind:value={drawerName} class="border p-1 w-full" />
+                </label>
+                <label class="block">Drawer Thickness (mm):
+                    <input type="number" bind:value={drawer} class="border p-1 w-full" />
+                </label>
+                <label class="block">Drawer Cost (per m²):
+                    <input type="number" bind:value={drawerCost} class="border p-1 w-full" />
                 </label>
                 <label class="block">Edge Banding Cost (per m):
                     <input type="number" bind:value={edgeBandCost} class="border p-1 w-full" />

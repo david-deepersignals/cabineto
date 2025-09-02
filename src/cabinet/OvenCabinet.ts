@@ -1,23 +1,32 @@
 import { Corpus, type CorpusOptions, type Panel } from "./Corpus";
 import { get } from 'svelte/store';
 import { materials } from '../stores/materials';
+import { createDrawerPanels } from './drawerHelper';
 
 export class OvenCabinet extends Corpus {
     drawerHeight: number;
-    clearance?: number;
+    drawerSystem: "standard" | "metabox" | "vertex";
+    metaboxType: number;
 
     constructor(
         id: string,
         w: number,
         h: number,
         d: number,
-        clearance: number = 0,
+        drawerSystem: "standard" | "metabox" | "vertex",
+        metaboxType: number = 400,
         options?: CorpusOptions,
         isUpper: boolean = false
     ) {
+        if (options?.insetBack == true) {
+            throw new Error("Oven cabinet cannot be inset back");
+        }
+
+        if (options?.hiddenHandles) {}
         super(id, w, h, d, 'oven', options, isUpper);
-        this.drawerHeight = h - 600;
-        this.clearance = clearance;
+        this.drawerHeight = h - (options?.hiddenHandles ? 60 : 0) - 600;
+        this.drawerSystem = drawerSystem;
+        this.metaboxType = metaboxType;
     }
 
     validate(): boolean {
@@ -26,70 +35,27 @@ export class OvenCabinet extends Corpus {
 
     public panels(): Panel[] {
         const data = super.panels();
-        const { corpus, back, front } = get(materials);
+        const { corpus, back } = get(materials);
         const t = corpus.thickness;
-        const drawerWidth = this.w - 2 * t;
-        const drawerDepth = this.d - back.thickness;
-        const innerW = drawerWidth - 2 * (this.clearance || 0);
-        const innerD = drawerDepth;
-        const internalHeight = this.drawerHeight - 4;
+        const corpusInnerWidth = this.w - 2 * t;
+        const corpusInnerDepth = this.d; // there is no back so no need to deduct anything
+
+        data.push(
+            ...createDrawerPanels({
+                id: this.id,
+                index: 1,
+                faceHeight: this.drawerHeight - 2,
+                faceWidth: this.w - 4,
+                drawerSystem: this.drawerSystem,
+                internalCorpusWidth: corpusInnerWidth,
+                internalCorpusDepth: corpusInnerDepth,
+                sliderLenght: this.metaboxType,
+            })
+        );
 
         data.push({
-            length: this.drawerHeight,
-            width: drawerWidth,
-            quantity: 1,
-            edgeBandingLengthRight: 1,
-            edgeBandingLengthLeft: 1,
-            edgeBandingWidthBottom: 1,
-            edgeBandingWidthTop: 1,
-            label: `${this.id}-> Drawer Face`,
-            hingeLocation: "",
-            material: front.name,
-            materialThickness: front.thickness,
-        });
-        data.push({
-            length: internalHeight,
-            width: innerD,
-            quantity: 2,
-            edgeBandingLengthRight: 1,
-            edgeBandingLengthLeft: 0,
-            edgeBandingWidthBottom: 0,
-            edgeBandingWidthTop: 1,
-            label: `${this.id}-> Drawer Side`,
-            hingeLocation: "",
-            material: corpus.name,
-            materialThickness: corpus.thickness,
-        });
-        data.push({
-            length: internalHeight,
-            width: innerW,
-            quantity: 1,
-            edgeBandingLengthRight: 0,
-            edgeBandingLengthLeft: 0,
-            edgeBandingWidthBottom: 0,
-            edgeBandingWidthTop: 1,
-            label: `${this.id}-> Drawer Back`,
-            hingeLocation: "",
-            material: corpus.name,
-            materialThickness: corpus.thickness,
-        });
-        data.push({
-            length: innerW,
-            width: innerD,
-            quantity: 1,
-            edgeBandingLengthRight: 0,
-            edgeBandingLengthLeft: 0,
-            edgeBandingWidthBottom: 0,
-            edgeBandingWidthTop: 0,
-            label: `${this.id}-> Drawer Bottom`,
-            hingeLocation: "",
-            material: back.name,
-            materialThickness: back.thickness,
-        });
-
-        data.push({
-            length: drawerWidth,
-            width: this.d,
+            length: corpusInnerWidth,
+            width: corpusInnerDepth,
             quantity: 1,
             edgeBandingLengthRight: 1,
             edgeBandingLengthLeft: 0,

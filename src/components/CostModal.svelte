@@ -65,7 +65,8 @@ function summarizeCosts(cabs: any[], mats: MaterialsState) {
   const materialsMap = new Map<string, number>([
     [mats.corpus.name, mats.corpus.cost ?? 0],
     [mats.front.name, mats.front.cost ?? 0],
-    [mats.back.name, mats.back.cost ?? 0]
+    [mats.back.name, mats.back.cost ?? 0],
+    [mats.drawer.name, mats.drawer.cost ?? 0]
   ]);
 
   const grouped: Record<string, Rect[]> = {};

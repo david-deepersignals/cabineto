@@ -7,8 +7,9 @@ import {HIDDEN_HANDEL_REVEAL} from "./config";
 export class DrawerCabinet extends Corpus{
     drawers?: number;
     heights?: number[];
-    drawerSystem: 'standard' | 'metabox';
+    drawerSystem: 'standard' | 'metabox' | 'vertex';
     metaboxType: number;
+    drawerSideHeight: number;
 
     constructor(
         id: string,
@@ -17,8 +18,9 @@ export class DrawerCabinet extends Corpus{
         d: number,
         drawers: number,
         heights: number[],
-        drawerSystem: 'standard' | 'metabox',
+        drawerSystem: 'standard' | 'metabox' | 'vertex',
         metaboxType: number = 400,
+        drawerSideHeight: number = 131,
         options?: CorpusOptions,
         isUpper: boolean = false,
     ) {
@@ -27,6 +29,7 @@ export class DrawerCabinet extends Corpus{
         this.heights = heights;
         this.drawerSystem = drawerSystem;
         this.metaboxType = metaboxType;
+        this.drawerSideHeight = drawerSideHeight;
     }
 
     validate(){
@@ -66,6 +69,7 @@ export class DrawerCabinet extends Corpus{
                     internalCorpusWidth: corpusInnerWidth,
                     internalCorpusDepth: corpusInnerDepth,
                     sliderLenght: this.metaboxType,
+                    railHeight: this.drawerSideHeight,
                 })
             );
         }

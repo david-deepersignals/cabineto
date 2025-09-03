@@ -5,6 +5,7 @@ import { materials } from "../stores/materials";
 export const METABOX_WIDTH_CLEARANCE = 31; // total clearance in mm
 export const METABOX_DEPTH_CLEARANCE = 42; // depth reduction in mm
 export const SLIDER_LENGHTS = [270, 320, 350, 400, 450, 500, 550];
+export const RAIL_HEIGHTS = [93, 131, 178];
 
 
 
@@ -17,11 +18,17 @@ interface DrawerParams {
     internalCorpusWidth: number;
     internalCorpusDepth: number;
     sliderLenght?: number;
+    railHeight?: number;
 }
 
 export function createDrawerPanels(p: DrawerParams): Panel[] {
     const { corpus, back, front, drawer } = get(materials);
     const panels: Panel[] = [];
+    const railHeightMapping: Record<number, number> = {
+        93: 63,
+        131: 101,
+        178: 148,
+    };
 
     panels.push({
         length: p.faceHeight,
@@ -42,7 +49,7 @@ export function createDrawerPanels(p: DrawerParams): Panel[] {
         //BOTTOM
         panels.push({
             length: p.internalCorpusWidth - 19,
-            width: p.sliderLenght ?? (p.internalCorpusDepth - 30) - 19,
+            width: (p.sliderLenght ?? 0) - 10,
             quantity: 1,
             edgeBandingLengthRight: 0,
             edgeBandingLengthLeft: 0,
@@ -58,7 +65,7 @@ export function createDrawerPanels(p: DrawerParams): Panel[] {
         //BACK
         panels.push({
             length: p.internalCorpusWidth - 42,
-            width: 131, //TODO: needs to be a variable slider height
+            width: railHeightMapping[p.railHeight ?? 131],
             quantity: 1,
             edgeBandingLengthRight: 0,
             edgeBandingLengthLeft: 0,
@@ -90,7 +97,7 @@ export function createDrawerPanels(p: DrawerParams): Panel[] {
         //BACK
         panels.push({
             length: p.internalCorpusWidth - METABOX_WIDTH_CLEARANCE,
-            width: 131, //TODO: needs to be a variable slider height
+            width: railHeightMapping[p.railHeight ?? 131],
             quantity: 1,
             edgeBandingLengthRight: 0,
             edgeBandingLengthLeft: 0,

@@ -6,7 +6,7 @@
     import {CornerCabinet} from "../cabinet/CornerCabinet";
     import {OvenCabinet} from "../cabinet/OvenCabinet";
     import { cabinets } from '../stores/cabinets';
-    import { SLIDER_LENGHTS } from "../cabinet/drawerHelper";
+    import { SLIDER_LENGHTS, RAIL_HEIGHTS } from "../cabinet/drawerHelper";
 
     const dispatch = createEventDispatcher();
 
@@ -22,6 +22,7 @@
     let drawerHeights = '30,30,40';
     let drawerSystem: 'standard' | 'metabox' | 'vertex' = 'standard';
     let metaboxType = '400';
+    let drawerSideHeight = '131';
     let fixedSide = '0';
     let fullCorpus = false;
     let insetBack = false;
@@ -54,6 +55,7 @@
                 drawerHeights = (cabinet as DrawerCabinet).heights?.join(',') ?? drawerHeights;
                 drawerSystem = (cabinet as DrawerCabinet).drawerSystem ?? 'standard';
                 metaboxType = ((cabinet as DrawerCabinet).metaboxType ?? 400).toString();
+                drawerSideHeight = ((cabinet as DrawerCabinet).drawerSideHeight ?? 131).toString();
             }
             if (type === 'corner') {
                 fixedSide = ((cabinet as CornerCabinet).fixedSide / 10).toString();
@@ -61,6 +63,7 @@
             if (type === 'oven') {
                 drawerSystem = (cabinet as OvenCabinet).drawerSystem ?? 'standard';
                 metaboxType = ((cabinet as OvenCabinet).metaboxType ?? 400).toString();
+                drawerSideHeight = ((cabinet as OvenCabinet).drawerSideHeight ?? 131).toString();
             }
         }
     });
@@ -114,6 +117,7 @@
                     .filter(v => !isNaN(v)),
                 drawerSystem,
                 parseInt(metaboxType),
+                parseInt(drawerSideHeight),
                 {full:fullCorpus,
                     insetBack:insetBack,
                     hiddenHandles:hiddenHandles},
@@ -142,6 +146,7 @@
                 d * 10,
                 drawerSystem,
                 parseInt(metaboxType),
+                parseInt(drawerSideHeight),
                 {full:fullCorpus, insetBack:insetBack, hiddenHandles:hiddenHandles},
                 false,
             );
@@ -237,10 +242,17 @@
                     </select>
                 </label>
                 {#if drawerSystem === 'metabox' || drawerSystem === 'vertex'}
-                <label class="block">Metabox Type:
+                <label class="block">Slide Length:
                     <select bind:value={metaboxType} class="border p-1 w-full">
                         {#each SLIDER_LENGHTS as t}
                             <option value={t}>{t} mm</option>
+                        {/each}
+                    </select>
+                </label>
+                <label class="block">Railing Height:
+                    <select bind:value={drawerSideHeight} class="border p-1 w-full">
+                        {#each RAIL_HEIGHTS as h}
+                            <option value={h}>{h} mm</option>
                         {/each}
                     </select>
                 </label>
@@ -251,13 +263,21 @@
                     <select bind:value={drawerSystem} class="border p-1 w-full">
                         <option value="standard">Wooden</option>
                         <option value="metabox">Metabox</option>
+                        <option value="vertex">Vertex</option>
                     </select>
                 </label>
-                {#if drawerSystem === 'metabox'}
-                <label class="block">Metabox Type:
+                {#if drawerSystem === 'metabox' || drawerSystem === 'vertex'}
+                <label class="block">Slide Length:
                     <select bind:value={metaboxType} class="border p-1 w-full">
                         {#each SLIDER_LENGHTS as t}
                             <option value={t}>{t} mm</option>
+                        {/each}
+                    </select>
+                </label>
+                <label class="block">Railing Height:
+                    <select bind:value={drawerSideHeight} class="border p-1 w-full">
+                        {#each RAIL_HEIGHTS as h}
+                            <option value={h}>{h} mm</option>
                         {/each}
                     </select>
                 </label>

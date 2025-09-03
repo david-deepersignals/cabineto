@@ -2,11 +2,13 @@ import { Corpus, type CorpusOptions, type Panel } from "./Corpus";
 import { get } from 'svelte/store';
 import { materials } from '../stores/materials';
 import { createDrawerPanels } from './drawerHelper';
+import {GOLA_PROFILE_WIDTH} from "./config";
 
 export class OvenCabinet extends Corpus {
     drawerHeight: number;
     drawerSystem: "standard" | "metabox" | "vertex";
     metaboxType: number;
+    drawerSideHeight: number;
 
     constructor(
         id: string,
@@ -15,6 +17,7 @@ export class OvenCabinet extends Corpus {
         d: number,
         drawerSystem: "standard" | "metabox" | "vertex",
         metaboxType: number = 400,
+        drawerSideHeight: number = 131,
         options?: CorpusOptions,
         isUpper: boolean = false
     ) {
@@ -22,11 +25,12 @@ export class OvenCabinet extends Corpus {
             throw new Error("Oven cabinet cannot be inset back");
         }
 
-        if (options?.hiddenHandles) {}
         super(id, w, h, d, 'oven', options, isUpper);
-        this.drawerHeight = h - (options?.hiddenHandles ? 60 : 0) - 600;
+        this.drawerHeight = h - (options?.hiddenHandles ? GOLA_PROFILE_WIDTH : 0) - 600;
+
         this.drawerSystem = drawerSystem;
         this.metaboxType = metaboxType;
+        this.drawerSideHeight = drawerSideHeight;
     }
 
     validate(): boolean {
@@ -50,6 +54,7 @@ export class OvenCabinet extends Corpus {
                 internalCorpusWidth: corpusInnerWidth,
                 internalCorpusDepth: corpusInnerDepth,
                 sliderLenght: this.metaboxType,
+                railHeight: this.drawerSideHeight,
             })
         );
 

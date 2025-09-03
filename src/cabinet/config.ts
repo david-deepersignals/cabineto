@@ -1,1 +1,2 @@
-export const HIDDEN_HANDEL_REVEAL = 35
+export const HIDDEN_HANDEL_REVEAL = 30
+export const GOLA_PROFILE_WIDTH = 48.2

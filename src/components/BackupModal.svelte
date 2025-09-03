@@ -32,6 +32,8 @@ function reviveCabinet(raw: any): Corpus {
         raw.drawers,
         raw.heights ?? [],
         raw.drawerSystem ?? 'standard',
+        raw.metaboxType ?? 400,
+        raw.drawerSideHeight ?? 131,
         raw.options,
         raw.isUpper
       );
@@ -54,6 +56,8 @@ function reviveCabinet(raw: any): Corpus {
         raw.h,
         raw.d,
         raw.drawerSystem ?? 'standard',
+        raw.metaboxType ?? 400,
+        raw.drawerSideHeight ?? 131,
         raw.options,
         raw.isUpper
       );

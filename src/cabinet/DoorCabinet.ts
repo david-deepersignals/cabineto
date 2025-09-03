@@ -35,7 +35,7 @@ export class DoorCabinet extends Corpus{
         let dh = this.h - 2;
         if (this.options?.hiddenHandles) {
             if (this.isUpper) {
-                dh += corpus.thickness;
+                dh += corpus.thickness + 2;
             } else {
                 dh -= HIDDEN_HANDEL_REVEAL;
             }

@@ -245,14 +245,14 @@
                 <label class="block">Slide Length:
                     <select bind:value={metaboxType} class="border p-1 w-full">
                         {#each SLIDER_LENGHTS as t}
-                            <option value={t}>{t} mm</option>
+                            <option value={String(t)}>{t} mm</option>
                         {/each}
                     </select>
                 </label>
                 <label class="block">Railing Height:
                     <select bind:value={drawerSideHeight} class="border p-1 w-full">
                         {#each RAIL_HEIGHTS as h}
-                            <option value={h}>{h} mm</option>
+                            <option value={String(h)}>{h} mm</option>
                         {/each}
                     </select>
                 </label>
@@ -270,14 +270,14 @@
                 <label class="block">Slide Length:
                     <select bind:value={metaboxType} class="border p-1 w-full">
                         {#each SLIDER_LENGHTS as t}
-                            <option value={t}>{t} mm</option>
+                            <option value={String(t)}>{t} mm</option>
                         {/each}
                     </select>
                 </label>
                 <label class="block">Railing Height:
                     <select bind:value={drawerSideHeight} class="border p-1 w-full">
                         {#each RAIL_HEIGHTS as h}
-                            <option value={h}>{h} mm</option>
+                            <option value={String(h)}>{h} mm</option>
                         {/each}
                     </select>
                 </label>

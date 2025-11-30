@@ -18,6 +18,7 @@
     let depth = '56';
     let type = 'door';
     let doors = 2;
+    let shelves = 0;
     let drawers = 3;
     let drawerHeights = '30,30,40';
     let drawerSystem: 'standard' | 'metabox' | 'vertex' = 'standard';
@@ -34,39 +35,48 @@
     let rotation = '0';
 
     onMount(() => {
-        if (cabinet) {
-            width = (cabinet.w / 10).toString();
-            height = (cabinet.h / 10).toString();
-            depth = (cabinet.d / 10).toString();
-            x = cabinet.x ?? 0;
-            y = cabinet.y ?? 0;
-            z = cabinet.z ?? 0;
-            rotation = (cabinet.rotation ?? 0).toString();
-            type = cabinet.type ?? 'door';
-            fullCorpus = cabinet.options?.full ?? false;
-            insetBack = cabinet.options?.insetBack ?? false;
-            hiddenHandles = cabinet.options?.hiddenHandles ?? false;
-            isUpperCabinet = (cabinet as any)?.isUpper ?? false;
-            if (type === 'door') {
-                doors = (cabinet as DoorCabinet).doors ?? doors;
-            }
-            if (type === 'drawer') {
-                drawers = (cabinet as DrawerCabinet).drawers ?? drawers;
-                drawerHeights = (cabinet as DrawerCabinet).heights?.join(',') ?? drawerHeights;
-                drawerSystem = (cabinet as DrawerCabinet).drawerSystem ?? 'standard';
-                metaboxType = ((cabinet as DrawerCabinet).metaboxType ?? 400).toString();
-                drawerSideHeight = ((cabinet as DrawerCabinet).drawerSideHeight ?? 131).toString();
-            }
-            if (type === 'corner') {
-                fixedSide = ((cabinet as CornerCabinet).fixedSide / 10).toString();
-            }
-            if (type === 'oven') {
-                drawerSystem = (cabinet as OvenCabinet).drawerSystem ?? 'standard';
-                metaboxType = ((cabinet as OvenCabinet).metaboxType ?? 400).toString();
-                drawerSideHeight = ((cabinet as OvenCabinet).drawerSideHeight ?? 131).toString();
-            }
-        }
+        if (cabinet) initFromCabinet();
     });
+
+    $: if (cabinet) {
+        // Keep fields in sync when opening editor with an existing cabinet
+        initFromCabinet();
+    }
+
+    function initFromCabinet(){
+        if (!cabinet) return;
+        width = (cabinet.w / 10).toString();
+        height = (cabinet.h / 10).toString();
+        depth = (cabinet.d / 10).toString();
+        x = cabinet.x ?? 0;
+        y = cabinet.y ?? 0;
+        z = cabinet.z ?? 0;
+        rotation = (cabinet.rotation ?? 0).toString();
+        type = cabinet.type ?? 'door';
+        fullCorpus = cabinet.options?.full ?? false;
+        insetBack = cabinet.options?.insetBack ?? false;
+        hiddenHandles = cabinet.options?.hiddenHandles ?? false;
+        isUpperCabinet = (cabinet as any)?.isUpper ?? false;
+        if (type === 'door') {
+            doors = (cabinet as DoorCabinet).doors ?? doors;
+            shelves = (cabinet as DoorCabinet).shelves ?? 0;
+        }
+        if (type === 'drawer') {
+            drawers = (cabinet as DrawerCabinet).drawers ?? drawers;
+            drawerHeights = (cabinet as DrawerCabinet).heights?.join(',') ?? drawerHeights;
+            drawerSystem = (cabinet as DrawerCabinet).drawerSystem ?? 'standard';
+            metaboxType = ((cabinet as DrawerCabinet).metaboxType ?? 400).toString();
+            drawerSideHeight = ((cabinet as DrawerCabinet).drawerSideHeight ?? 131).toString();
+        }
+        if (type === 'corner') {
+            fixedSide = ((cabinet as CornerCabinet).fixedSide / 10).toString();
+        }
+        if (type === 'oven') {
+            drawerSystem = (cabinet as OvenCabinet).drawerSystem ?? 'standard';
+            metaboxType = ((cabinet as OvenCabinet).metaboxType ?? 400).toString();
+            drawerSideHeight = ((cabinet as OvenCabinet).drawerSideHeight ?? 131).toString();
+        }
+    }
 
     $: isDrawer = type === 'drawer';
     $: isDoor = type === 'door';
@@ -100,6 +110,7 @@
                 h * 10,
                 d * 10,
                 doors ?? 0,
+                shelves ?? 0,
                 {full:fullCorpus,
                 insetBack:insetBack,
                 hiddenHandles:hiddenHandles},
@@ -220,6 +231,9 @@
             {#if isDoor}
                 <label class="block">Doors:
                     <input type="number" bind:value={doors} class="border p-1 w-full" />
+                </label>
+                <label class="block">Shelves:
+                    <input type="number" bind:value={shelves} min="0" class="border p-1 w-full" />
                 </label>
             {/if}
             {#if isCorner}

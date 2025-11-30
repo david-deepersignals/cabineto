@@ -615,6 +615,9 @@ function getCabinetFrontBorder(cabinet: Corpus) {
             W:{cabinet.w} H:{cabinet.h} D:{cabinet.d}
             {#if cabinet.type === 'door'}
               <br/>🚪 {(cabinet as any).doors} door(s)
+              {#if (cabinet as any).shelves && (cabinet as any).shelves > 0}
+                <br/>🗂️ {(cabinet as any).shelves} shelf/shelves
+              {/if}
             {/if}
             {#if cabinet.type === 'drawer'}
               <br/>🗄️ {(cabinet as any).drawers} drawer(s)<br>{(cabinet as any).heights.join("% / ")}

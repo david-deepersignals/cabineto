@@ -59,7 +59,7 @@ export abstract class Corpus {
         const { corpus, back } = get(materials);
         const t = corpus.thickness;
         const data: Panel[] = [];
-        const dadoSpec: Dado = { offset: 15, depth: 7, width: back.thickness };
+        const dadoSpec: Dado = { offset: 15, depth: 7, width: back.thickness + 1 };
 
         const sidePanel: Panel = {
             length: this.h,
@@ -87,7 +87,7 @@ export abstract class Corpus {
                 width: this.d,
                 quantity: 2,
                 edgeBandingLengthRight: 1,
-                edgeBandingLengthLeft: 1,
+                edgeBandingLengthLeft: 0,
                 edgeBandingWidthBottom: 0,
                 edgeBandingWidthTop: 0,
                 label: `${this.id}-> Top/Bottom panel`,

@@ -203,13 +203,13 @@ function panelDadoSvg(p: Panel,index: number): string {
   const dadoWidth = p.dados?.[0]?.width || 0;
   const dadoDepth = p.dados?.[0]?.depth || 0;
   const dadoOffset = p.dados?.[0]?.offset || 0;
-  const panelThickness = 20; // Assume panel thickness for cross-section
+  const panelThickness = 18; // Assume panel thickness for cross-section
   
   // Adjust canvas size
   const totalW = width + dadoDepth + margin * 3; // Add space for cross-section to the right
   const totalH = Math.max(height, dadoWidth + panelThickness) + margin * 2;
 
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}">`;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${totalH}" viewBoDx="0 0 ${totalW} ${totalH}">`;
 
 
   // Add a title to the SVG

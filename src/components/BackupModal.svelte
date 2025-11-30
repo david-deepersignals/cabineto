@@ -64,7 +64,16 @@ function reviveCabinet(raw: any): Corpus {
       break;
     case 'door':
     default:
-      cab = new DoorCabinet(raw.id, raw.w, raw.h, raw.d, raw.doors, raw.options, raw.isUpper);
+      cab = new DoorCabinet(
+        raw.id,
+        raw.w,
+        raw.h,
+        raw.d,
+        raw.doors,
+        raw.shelves ?? 0,
+        raw.options,
+        raw.isUpper
+      );
       break;
   }
   cab.x = raw.x;

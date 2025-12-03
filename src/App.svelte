@@ -2,12 +2,13 @@
 import Form from "./components/Form.svelte";
 import SettingsPage from "./components/SettingsPage.svelte";
 import LayoutSummary from "./components/LayoutSummary.svelte";
-import BackupModal from "./components/BackupModal.svelte";
 import CostPanel from "./components/CostPanel.svelte";
+import ProjectSidebar from "./components/ProjectSidebar.svelte";
 import { cabinets } from './stores/cabinets';
 import { scale } from './stores/scale';
 import { room } from './stores/room';
 import { materials } from './stores/materials';
+import { projects } from './stores/projects';
 import { summarizeCosts } from './utils/cost';
 import type { Corpus } from './cabinet/Corpus';
 
@@ -144,10 +145,11 @@ $: layoutHeight = layoutHeightMm / $scale;
 let showForm = false;
 let showSettings = false;
 let showSummary = false;
-let showBackup = false;
 let showCostPanel = false;
+let showProjects = false;
 let editingCabinet: Corpus | null = null;
 $: costSummary = summarizeCosts($cabinets, $materials);
+$: activeProject = $projects.projects.find(p => p.id === $projects.activeId);
 
   const openAddForm = () => {
     editingCabinet = null;
@@ -166,13 +168,6 @@ $: costSummary = summarizeCosts($cabinets, $materials);
 
   const openSettings = () => {
     showSettings = true;
-  };
-
-  const toggleBackup = () => {
-    showBackup = !showBackup;
-  };
-  const openCostPanel = () => {
-    showCostPanel = true;
   };
 
   const deleteCabinet = (id: string) => {
@@ -563,18 +558,21 @@ function getCabinetFrontBorder(cabinet: Corpus) {
         </div>
         <div>
           <p class="text-xs uppercase tracking-wide text-gray-500">Visual Cabinet</p>
-          <h1 class="text-xl font-semibold text-gray-900">Planner</h1>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-semibold text-gray-900">Planner</h1>
+            <button
+              class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-800 shadow-sm hover:bg-slate-200"
+              on:click={() => showProjects = true}
+            >
+              <svg class="h-3.5 w-3.5 text-slate-700" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path d="M3 5.5a1.5 1.5 0 0 1 1.5-1.5h3l1 1H15A1.5 1.5 0 0 1 16.5 6v8.5A1.5 1.5 0 0 1 15 16H4.5A1.5 1.5 0 0 1 3 14.5v-9Z" />
+              </svg>
+              <span class="truncate max-w-[140px]">{activeProject?.name ?? 'My project'}</span>
+            </button>
+          </div>
         </div>
       </div>
-      <div class="flex items-center gap-3">
-        {#if !showSettings && !showSummary}
-          <button
-            class="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800 shadow-sm hover:bg-blue-100"
-            on:click={() => showCostPanel = !showCostPanel}
-          >
-            Total: ${costSummary.total.toFixed(2)}
-          </button>
-        {/if}
+      <div class="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
         <div class="flex items-center gap-2">
           <button
             class="inline-flex items-center gap-2 rounded-lg border border-blue-100 px-3 py-2 text-sm text-gray-800 bg-white hover:bg-blue-50 shadow-sm"
@@ -586,18 +584,21 @@ function getCabinetFrontBorder(cabinet: Corpus) {
             </svg>
             Settings
           </button>
-          <button
-            class="inline-flex items-center gap-2 rounded-lg border border-blue-100 px-3 py-2 text-sm text-gray-800 bg-white hover:bg-blue-50 shadow-sm"
-            on:click={toggleBackup}
-          >
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-              <path d="M5 16.5a5 5 0 0 1 .6-9.9A6 6 0 0 1 18 9h.3A4.7 4.7 0 0 1 18 19H8" />
-              <path d="M9.5 19.5 8 21l1.5 1.5" />
-              <path d="M15.5 19.5 17 21l-1.5 1.5" />
-            </svg>
-            Backups
-          </button>
         </div>
+        <button
+          class="inline-flex items-center gap-3 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow hover:bg-slate-800"
+          on:click={() => showProjects = true}
+        >
+          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-white/10">
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M3 5.5A1.5 1.5 0 0 1 4.5 4h3l1 1H15A1.5 1.5 0 0 1 16.5 6v8.5A1.5 1.5 0 0 1 15 16H4.5A1.5 1.5 0 0 1 3 14.5v-9Z" />
+            </svg>
+          </div>
+          <div class="text-left leading-tight">
+            <p class="text-[10px] uppercase tracking-wide text-slate-200">Project</p>
+            <p class="text-sm font-semibold">{activeProject?.name ?? 'My project'}</p>
+          </div>
+        </button>
       </div>
     </header>
     {#if showSettings}
@@ -613,9 +614,22 @@ function getCabinetFrontBorder(cabinet: Corpus) {
       <div class="mb-4"></div>
     {/if}
 
-    {#if showCostPanel && !showSettings && !showSummary}
-      <div class="mb-4 flex justify-end">
-        <CostPanel inline on:close={() => showCostPanel = false} />
+    {#if !showSettings && !showSummary}
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex gap-3">
+          <button on:click={openAddForm} class="px-4 py-2 bg-blue-600 text-white rounded">
+            Add Cabinet
+          </button>
+          <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => showSummary = true}>
+            Layout Summary
+          </button>
+        </div>
+        <button
+          class="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800 shadow-sm hover:bg-blue-100"
+          on:click={() => showCostPanel = !showCostPanel}
+        >
+          Total: ${costSummary.total.toFixed(2)}
+        </button>
       </div>
     {/if}
 
@@ -624,15 +638,6 @@ function getCabinetFrontBorder(cabinet: Corpus) {
   {:else if showSettings}
     <SettingsPage on:close={() => showSettings = false} />
   {:else}
-    <div class="flex gap-4 mb-4">
-      <button on:click={openAddForm} class="px-4 py-2 bg-blue-600 text-white rounded">
-        Add Cabinet
-      </button>
-      <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => showSummary = true}>
-        Layout Summary
-      </button>
-    </div>
-
     <div class="flex gap-2 mb-2">
       <button class="px-2 py-1 rounded border {view === 'top' ? 'bg-blue-500 text-white' : 'bg-white'}" on:click={() => viewChange('top')}>Top View</button>
       <button class="px-2 py-1 rounded border {view === 'front' ? 'bg-blue-500 text-white' : 'bg-white'}" on:click={() => viewChange('front')}>North Wall</button>
@@ -716,21 +721,19 @@ function getCabinetFrontBorder(cabinet: Corpus) {
             </div>
           {/each}
       </div>
-      <div class="absolute bottom-2 right-2 flex flex-col gap-2">
-        <button class="px-2 py-1 bg-gray-600 text-white rounded" on:click={zoomIn}>+</button>
-        <button class="px-2 py-1 bg-gray-600 text-white rounded" on:click={zoomOut}>-</button>
-      </div>
+    </div>
+    <div class="fixed right-4 top-1/2 z-20 flex -translate-y-1/2 transform flex-col gap-2">
+      <button class="px-3 py-2 bg-gray-700 text-white rounded shadow hover:bg-gray-800" on:click={zoomIn}>+</button>
+      <button class="px-3 py-2 bg-gray-700 text-white rounded shadow hover:bg-gray-800" on:click={zoomOut}>-</button>
     </div>
 
     {#if showForm}
       <Form cabinet={editingCabinet} on:close={closeForm} />
     {/if}
   {/if}
-  {#if showBackup}
-    <BackupModal on:close={() => showBackup = false} />
-  {/if}
   {#if showCostPanel}
     <CostPanel on:close={() => showCostPanel = false} />
   {/if}
+  <ProjectSidebar open={showProjects} on:close={() => showProjects = false} />
 </div>
 </div>

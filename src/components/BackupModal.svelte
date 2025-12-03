@@ -2,15 +2,12 @@
 import { createEventDispatcher } from 'svelte';
 import { cabinets } from '../stores/cabinets';
 import type { Corpus } from '../cabinet/Corpus';
-import { DoorCabinet } from '../cabinet/DoorCabinet';
-import { DrawerCabinet } from '../cabinet/DrawerCabinet';
-import { CornerCabinet } from '../cabinet/CornerCabinet';
-import { OvenCabinet } from '../cabinet/OvenCabinet';
+import { reviveCabinet, serializeCabinets } from '../utils/persistence';
 
 const dispatch = createEventDispatcher();
 
 function downloadJSON() {
-  const json = JSON.stringify($cabinets, null, 2);
+  const json = JSON.stringify(serializeCabinets($cabinets), null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -18,71 +15,6 @@ function downloadJSON() {
   a.download = 'cabinets.json';
   a.click();
   URL.revokeObjectURL(url);
-}
-
-function reviveCabinet(raw: any): Corpus {
-  let cab: Corpus;
-  switch (raw.type) {
-    case 'drawer':
-      cab = new DrawerCabinet(
-        raw.id,
-        raw.w,
-        raw.h,
-        raw.d,
-        raw.drawers,
-        raw.heights ?? [],
-        raw.drawerSystem ?? 'standard',
-        raw.metaboxType ?? 400,
-        raw.drawerSideHeight ?? 131,
-        raw.options,
-        raw.isUpper
-      );
-      break;
-    case 'corner':
-      cab = new CornerCabinet(
-        raw.id,
-        raw.w,
-        raw.h,
-        raw.d,
-        raw.fixedSide,
-        raw.options,
-        raw.isUpper
-      );
-      break;
-    case 'oven':
-      cab = new OvenCabinet(
-        raw.id,
-        raw.w,
-        raw.h,
-        raw.d,
-        raw.drawerSystem ?? 'standard',
-        raw.metaboxType ?? 400,
-        raw.drawerSideHeight ?? 131,
-        raw.options,
-        raw.isUpper
-      );
-      break;
-    case 'door':
-    default:
-      cab = new DoorCabinet(
-        raw.id,
-        raw.w,
-        raw.h,
-        raw.d,
-        raw.doors,
-        raw.shelves ?? 0,
-        raw.options,
-        raw.isUpper
-      );
-      break;
-  }
-  cab.x = raw.x;
-  cab.y = raw.y;
-  cab.z = raw.z;
-  cab.rotation = raw.rotation;
-  cab.wall = raw.wall;
-  cab.validate();
-  return cab;
 }
 
 function uploadJSON(event: Event) {

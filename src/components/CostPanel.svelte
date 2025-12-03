@@ -5,6 +5,12 @@
   import { summarizeCosts } from '../utils/cost';
 
   const dispatch = createEventDispatcher();
+  const handleOverlayKeydown = (event: KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      dispatch('close');
+    }
+  };
 
   export let inline = false;
 
@@ -77,8 +83,22 @@
     </div>
   </div>
 {:else}
-  <div class="fixed inset-0 z-20 flex justify-end bg-black/30" on:click={() => dispatch('close')}>
-    <div class="h-full w-full max-w-xl bg-white shadow-2xl animate-[slideIn_200ms_ease-out]" on:click|stopPropagation>
+  <div
+    class="fixed inset-0 z-20 flex justify-end bg-black/30"
+    role="button"
+    tabindex="0"
+    aria-label="Close cost panel"
+    on:click={() => dispatch('close')}
+    on:keydown={handleOverlayKeydown}
+  >
+    <div
+      class="h-full w-full max-w-xl bg-white shadow-2xl animate-[slideIn_200ms_ease-out]"
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
+      on:click|stopPropagation
+      on:keydown|stopPropagation
+    >
       <div class="flex items-center justify-between border-b px-5 py-4">
         <div>
           <p class="text-xs uppercase tracking-wide text-gray-500">Cost breakdown</p>

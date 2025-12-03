@@ -1,6 +1,6 @@
 <script lang="ts">
 import { cabinets } from '../stores/cabinets';
-import { createEventDispatcher } from 'svelte';
+import { createEventDispatcher, onMount } from 'svelte';
 import { scale } from '../stores/scale';
 import type { Panel } from '../cabinet/Corpus';
 import JSZip from 'jszip';
@@ -19,6 +19,21 @@ const DIM_OFFSET = 20;
 const MARGIN = 40;
 const CABINET_MARGIN = 20;
 const CABINET_DIM = 20;
+const MAX_DISPLAY_WIDTH = 900;
+const VIEW_HEIGHT_PADDING = 220;
+const MIN_DISPLAY_WIDTH = 600;
+
+const fitToWidth = (width: number, height: number, maxWidth: number = MAX_DISPLAY_WIDTH) => {
+  if (width <= maxWidth) return { width, height };
+  const ratio = maxWidth / width;
+  return { width: maxWidth, height: height * ratio };
+};
+const fitToBox = (width: number, height: number, maxWidth: number, maxHeight: number) => {
+  const widthRatio = maxWidth / width;
+  const heightRatio = maxHeight / height;
+  const ratio = Math.min(widthRatio, heightRatio, 1);
+  return { width: width * ratio, height: height * ratio };
+};
 
 interface Bounds { minX: number; minY: number; width: number; height: number; }
 interface HeightSegment { start: number; end: number; mid: number; size: number; }
@@ -26,8 +41,32 @@ interface HeightSegment { start: number; end: number; mid: number; size: number;
 let csvType: 'general' | 'max' = 'general';
 
 let iso: { cabs: any[]; bounds: Bounds } = { cabs: [], bounds: { minX: 0, minY: 0, width: 0, height: 0 } };
+let isoBaseW = 0;
+let isoBaseH = 0;
+let isoDisplay = { width: 0, height: 0 };
+let viewportHeight = 900;
+let viewportWidth = 1200;
+let isoRotate = false;
 
 $: iso = prepareIso();
+$: {
+  isoBaseW = iso.bounds.width + MARGIN * 2;
+  isoBaseH = iso.bounds.height + MARGIN * 2;
+  const maxWidth = Math.max(MIN_DISPLAY_WIDTH, viewportWidth - 80);
+  const maxHeight = Math.max(320, viewportHeight - VIEW_HEIGHT_PADDING);
+  isoDisplay = fitToBox(isoBaseW, isoBaseH, maxWidth, maxHeight);
+  isoRotate = isoBaseW > isoBaseH;
+}
+
+onMount(() => {
+  const updateSize = () => {
+    viewportHeight = window.innerHeight;
+    viewportWidth = window.innerWidth;
+  };
+  updateSize();
+  window.addEventListener('resize', updateSize);
+  return () => window.removeEventListener('resize', updateSize);
+});
 
 function getAxes(view: View) {
   switch (view) {
@@ -540,10 +579,21 @@ function csvMaxMoris() {
   <button class="px-4 py-2 bg-blue-600 text-white rounded" on:click={() => dispatch('close')}>Back</button>
 </div>
 
-<h3 class="font-semibold mb-2">3D View</h3>
+<div class="summary-section print-page">
+<div class="summary-header flex items-center justify-between">
+  <h3 class={`font-semibold mb-2 ${isoRotate ? 'rotate-heading' : ''}`}>3D View</h3>
+  <p class={`text-sm text-gray-700 ${isoRotate ? 'rotate-label' : ''}`}>
+    Total width: {totalWidthMm(iso.bounds)} mm · Total height: {totalHeightMm(iso.bounds)} mm
+    {#if isoRotate}
+      <span class="ml-2 text-xs text-gray-500">(Rotated for print)</span>
+    {/if}
+  </p>
+</div>
 <svg
-  width={iso.bounds.width + MARGIN * 2}
-  height={iso.bounds.height + MARGIN * 2}
+  class={`summary-svg ${isoRotate ? 'rotate-print' : ''}`}
+  width={isoDisplay.width}
+  height={isoDisplay.height}
+  viewBox={`0 0 ${isoBaseW} ${isoBaseH}`}
   style="border:1px solid #000"
 >
   <defs>
@@ -701,17 +751,33 @@ function csvMaxMoris() {
     {/each}
   </g>
 </svg>
-<p>Total width: {totalWidthMm(iso.bounds)} mm, Total height: {totalHeightMm(iso.bounds)} mm</p>
+</div>
 
 {#each viewConfigs as v}
   {@const data = prepare(v.id)}
   {@const axes = getAxes(v.id)}
-  <h3 class="font-semibold mb-2">{v.label}</h3>
-  <svg
-    width={svgWidth(data.bounds)}
-    height={svgHeight(data.bounds)}
-    style="border:1px solid #000"
-  >
+  {@const baseW = svgWidth(data.bounds)}
+  {@const baseH = svgHeight(data.bounds)}
+  {@const maxWidth = Math.max(MIN_DISPLAY_WIDTH, viewportWidth - 80)}
+  {@const display = fitToWidth(baseW, baseH, maxWidth)}
+  {@const rotateWide = v.id === 'north' ? true : baseW > baseH}
+  <div class="summary-section print-page">
+    <div class="summary-header flex items-center justify-between">
+      <h3 class={`font-semibold mb-2 ${rotateWide ? 'rotate-heading' : ''}`}>{v.label}</h3>
+      <p class={`text-sm text-gray-700 ${rotateWide ? 'rotate-label' : ''}`}>
+        Total width: {totalWidthMm(data.bounds)} mm · Total height: {totalHeightMm(data.bounds)} mm
+        {#if rotateWide}
+          <span class="ml-2 text-xs text-gray-500">(Rotated for print)</span>
+        {/if}
+      </p>
+    </div>
+    <svg
+      class={`summary-svg ${rotateWide ? 'rotate-print' : ''}`}
+      width={display.width}
+      height={display.height}
+      viewBox={`0 0 ${baseW} ${baseH}`}
+      style="border:1px solid #000"
+    >
     <defs>
       <pattern id={`hatch-${v.id}`} patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(45)">
         <line x1="0" y1="0" x2="0" y2="4" stroke="black" stroke-width="0.5" />
@@ -802,11 +868,11 @@ function csvMaxMoris() {
       <text x={data.bounds.width + MARGIN + DIM_OFFSET + 5} y={MARGIN + seg.mid} font-size="12" dominant-baseline="middle">{seg.size} mm</text>
     {/each}
   </svg>
-  <p>Total width: {totalWidthMm(data.bounds)} mm, Total height: {totalHeightMm(data.bounds)} mm</p>
+  </div>
 {/each}
 
 <h3 class="font-semibold mb-2">Cabinet Drawings</h3>
-<div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+<div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 summary-section summary-grid print-page">
   {#each $cabinets as cab}
     {@const dims = getOrientedDims(cab)}
     {@const w = cab.w / $scale}
@@ -830,6 +896,9 @@ function csvMaxMoris() {
     {@const isoMaxY = Math.max(...isoPoints.map(p => p.y))}
     {@const isoSvgW = isoMaxX - isoMinX + CABINET_MARGIN * 2 + CABINET_DIM * 3}
     {@const isoSvgH = isoMaxY - isoMinY + CABINET_MARGIN * 2 + CABINET_DIM * 3}
+    {@const maxWidth = Math.max(MIN_DISPLAY_WIDTH, viewportWidth - 80)}
+    {@const isoDisplay = fitToWidth(isoSvgW, isoSvgH, maxWidth)}
+    {@const rotateWide = isoSvgW > isoSvgH}
     {@const isoTx = CABINET_MARGIN + CABINET_DIM - isoMinX}
     {@const isoTy = CABINET_MARGIN + CABINET_DIM - isoMinY}
     {@const p1 = isoPoints[0]}
@@ -855,110 +924,17 @@ function csvMaxMoris() {
     {@const endY = p4.y + offY}
     {@const midX = (startX + endX) / 2 + offNX * 10}
     {@const midY = (startY + endY) / 2 + offNY * 10}
-    <div class="border p-2 flex flex-col items-center">
+    <div class="border p-3 flex flex-col gap-3 summary-card">
+      <div class="flex items-center justify-between w-full">
+        <div class="text-base font-semibold text-gray-900">{cab.id}</div>
+        <div class="text-sm text-gray-700 capitalize">{cab.type}</div>
+      </div>
       <svg
-        width={w + CABINET_MARGIN * 2 + CABINET_DIM * 3}
-        height={h + CABINET_MARGIN * 2 + CABINET_DIM * 3}
-        style="border:1px solid #000"
-      >
-        <defs>
-          <pattern id={`hatch-${cab.id}`} patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(45)">
-            <line x1="0" y1="0" x2="0" y2="4" stroke="black" stroke-width="0.5" />
-          </pattern>
-        </defs>
-        <g transform={`translate(${CABINET_MARGIN},${CABINET_MARGIN + CABINET_DIM})`}>
-          {#if cab.type === 'corner' && (cab as any).fixedSide}
-            {@const fixed = (cab as any).fixedSide / $scale}
-            <rect x="0" y="0" width={fixed} height={h} fill={`url(#hatch-${cab.id})`} />
-          {/if}
-          <rect x="0" y="0" width={w} height={h} fill="none" stroke="black" />
-
-          {#if cab.type === 'corner' && (cab as any).fixedSide}
-            <line x1={(cab as any).fixedSide / $scale} y1="0" x2={(cab as any).fixedSide / $scale} y2={h} stroke="black" stroke-dasharray="4 2" />
-          {/if}
-
-          {#if cab.type === 'door' && (cab as any).doors}
-            {#each Array((cab as any).doors - 1) as _, i}
-              <line x1={w * (i + 1) / (cab as any).doors} y1="0" x2={w * (i + 1) / (cab as any).doors} y2={h} stroke="black" stroke-dasharray="4 2" />
-            {/each}
-            {#each Array((cab as any).doors) as _, i}
-              {@const doorWidth = w / (cab as any).doors}
-              {@const doorX = i * doorWidth}
-              {@const handleX = (cab as any).doors === 1 ? doorX + doorWidth - 5 : i === 0 ? doorX + doorWidth - 5 : doorX + 5}
-              <line x1={handleX} y1={h/2 - 5} x2={handleX} y2={h/2 + 5} stroke="black" />
-            {/each}
-          {/if}
-
-          {#if cab.type === 'drawer' && (cab as any).heights}
-            {@const heights = (cab as any).heights}
-            {#each heights.slice(0, -1) as _, i}
-              {@const pos = heights.slice(0, i + 1).reduce((a: number, b: number) => a + b, 0)}
-              <line x1="0" x2={w} y1={h * pos / 100} y2={h * pos / 100} stroke="black" stroke-dasharray="4 2" />
-            {/each}
-            {#each heights as height, i}
-              {@const top = heights.slice(0, i).reduce((a: number, b: number) => a + b, 0)}
-              {@const mid = top + height / 2}
-              <line x1={w/2 - 5} x2={w/2 + 5} y1={h * mid / 100} y2={h * mid / 100} stroke="black" />
-            {/each}
-          {/if}
-
-          {#if cab.type === 'oven' && (cab as any).drawerHeight}
-            {@const drawerH = (cab as any).drawerHeight / $scale}
-            <line x1="0" x2={w} y1={h - drawerH} y2={h - drawerH} stroke="black" stroke-dasharray="4 2" />
-            <line x1={w/2 - 5} x2={w/2 + 5} y1={h - drawerH/2} y2={h - drawerH/2} stroke="black" />
-            {@const ovenHeight = h - drawerH}
-            <rect x={w * 0.1} y={ovenHeight * 0.1} width={w * 0.8} height={ovenHeight * 0.8} fill="none" stroke="black" />
-            <rect x={w * 0.25} y={ovenHeight * 0.25} width={w * 0.5} height={ovenHeight * 0.5} fill="none" stroke="black" />
-          {/if}
-
-          <text x={w/2} y={h/2} text-anchor="middle" dominant-baseline="middle" font-size="12">{cab.id}</text>
-        </g>
-
-        <!-- cabinet width dimension -->
-        <line x1={CABINET_MARGIN} y1={h + CABINET_MARGIN + CABINET_DIM * 2} x2={w + CABINET_MARGIN} y2={h + CABINET_MARGIN + CABINET_DIM * 2} stroke="black" />
-        <line x1={CABINET_MARGIN} y1={h + CABINET_MARGIN + CABINET_DIM * 2 - 5} x2={CABINET_MARGIN} y2={h + CABINET_MARGIN + CABINET_DIM * 2 + 5} stroke="black" />
-        <line x1={w + CABINET_MARGIN} y1={h + CABINET_MARGIN + CABINET_DIM * 2 - 5} x2={w + CABINET_MARGIN} y2={h + CABINET_MARGIN + CABINET_DIM * 2 + 5} stroke="black" />
-        <text x={CABINET_MARGIN + w / 2} y={h + CABINET_MARGIN + CABINET_DIM * 2 + 15} text-anchor="middle" font-size="10">{Math.round(cab.w)} mm</text>
-
-        <!-- cabinet height dimension -->
-        <line x1={w + CABINET_MARGIN + CABINET_DIM} y1={CABINET_MARGIN + CABINET_DIM} x2={w + CABINET_MARGIN + CABINET_DIM} y2={h + CABINET_MARGIN + CABINET_DIM} stroke="black" />
-        <line x1={w + CABINET_MARGIN + CABINET_DIM - 5} y1={CABINET_MARGIN + CABINET_DIM} x2={w + CABINET_MARGIN + CABINET_DIM + 5} y2={CABINET_MARGIN + CABINET_DIM} stroke="black" />
-        <line x1={w + CABINET_MARGIN + CABINET_DIM - 5} y1={h + CABINET_MARGIN + CABINET_DIM} x2={w + CABINET_MARGIN + CABINET_DIM + 5} y2={h + CABINET_MARGIN + CABINET_DIM} stroke="black" />
-        <text x={w + CABINET_MARGIN + CABINET_DIM + 5} y={CABINET_MARGIN + CABINET_DIM + h / 2} font-size="10" dominant-baseline="middle">{Math.round(cab.h)} mm</text>
-
-        <!-- door specific dimensions -->
-        {#if cab.type === 'door' && (cab as any).doors}
-          {#each Array((cab as any).doors) as _, i}
-            {@const doorWidth = w / (cab as any).doors}
-            {@const start = CABINET_MARGIN + i * doorWidth}
-            {@const end = start + doorWidth}
-            <line x1={start} y1={CABINET_MARGIN} x2={end} y2={CABINET_MARGIN} stroke="black" />
-            <line x1={start} y1={CABINET_MARGIN - 5} x2={start} y2={CABINET_MARGIN + 5} stroke="black" />
-            <line x1={end} y1={CABINET_MARGIN - 5} x2={end} y2={CABINET_MARGIN + 5} stroke="black" />
-            <text x={(start + end)/2} y={CABINET_MARGIN - 10} text-anchor="middle" font-size="10">{Math.round(doorWidth * $scale)} mm</text>
-          {/each}
-        {/if}
-
-        <!-- drawer specific dimensions -->
-        {#if cab.type === 'drawer' && (cab as any).heights}
-          {@const heights = (cab as any).heights}
-          {#each heights as height, i}
-            {@const top = CABINET_MARGIN + CABINET_DIM + h * heights.slice(0, i).reduce((a: number, b: number) => a + b, 0) / 100}
-            {@const bottom = CABINET_MARGIN + CABINET_DIM + h * heights.slice(0, i + 1).reduce((a: number, b: number) => a + b, 0) / 100}
-            <line x1={w + CABINET_MARGIN + CABINET_DIM * 2} y1={top} x2={w + CABINET_MARGIN + CABINET_DIM * 2} y2={bottom} stroke="black" />
-            <line x1={w + CABINET_MARGIN + CABINET_DIM * 2 - 5} y1={top} x2={w + CABINET_MARGIN + CABINET_DIM * 2 + 5} y2={top} stroke="black" />
-            <line x1={w + CABINET_MARGIN + CABINET_DIM * 2 - 5} y1={bottom} x2={w + CABINET_MARGIN + CABINET_DIM * 2 + 5} y2={bottom} stroke="black" />
-            <text x={w + CABINET_MARGIN + CABINET_DIM * 2 + 5} y={(top + bottom)/2} font-size="10" dominant-baseline="middle">{Math.round(height / 100 * cab.h)} mm</text>
-          {/each}
-          {#if (cab as any).clearance}
-            <text x={CABINET_MARGIN} y={CABINET_MARGIN + CABINET_DIM - 5} font-size="10">Clearance {(cab as any).clearance} mm</text>
-          {/if}
-        {/if}
-      </svg>
-      <svg
-        width={isoSvgW}
-        height={isoSvgH}
-        style="border:1px solid #000; margin-top:8px"
+        class={`summary-svg ${rotateWide ? 'rotate-print' : ''}`}
+        width={isoDisplay.width}
+        height={isoDisplay.height}
+        viewBox={`0 0 ${isoSvgW} ${isoSvgH}`}
+        style="border:1px solid #000; margin-top:4px"
       >
         <g transform={`translate(${isoTx},${isoTy})`}>
           <polygon points={`${p5.x},${p5.y} ${p6.x},${p6.y} ${p7.x},${p7.y} ${p8.x},${p8.y}`} fill="none" stroke="black" />
@@ -1014,34 +990,93 @@ function csvMaxMoris() {
           
         </g>
       </svg>
-      <div class="text-xs mt-1 text-center">
-        <p>Width: {Math.round(cab.w)} mm</p>
-        <p>Height: {Math.round(cab.h)} mm</p>
-        <p>Depth: {Math.round(cab.d)} mm</p>
-        {#if cab.type === 'door'}
-          <p>Doors: {(cab as any).doors}</p>
-        {/if}
-        {#if cab.type === 'drawer'}
-          <p>Drawers: {(cab as any).drawers}</p>
-          {#if (cab as any).clearance}
-            <p>Clearance: {(cab as any).clearance} mm</p>
+      <div class="text-sm mt-2 w-full">
+        <div class="grid grid-cols-2 gap-2 text-gray-800">
+          <span class="font-semibold">Width</span><span class="font-semibold">{Math.round(cab.w)} mm</span>
+          <span class="font-semibold">Height</span><span class="font-semibold">{Math.round(cab.h)} mm</span>
+          <span class="font-semibold">Depth</span><span class="font-semibold">{Math.round(cab.d)} mm</span>
+          {#if cab.type === 'door'}
+            <span class="font-semibold text-gray-800">Doors</span><span>{(cab as any).doors}</span>
           {/if}
-        {/if}
-        {#if cab.type === 'oven'}
-          <p>Drawer Height: {(cab as any).drawerHeight} mm</p>
-        {/if}
-        {#if cab.type === 'corner' && (cab as any).fixedSide}
-          <p>Fixed Side: {(cab as any).fixedSide} mm</p>
-        {/if}
+          {#if cab.type === 'drawer'}
+            <span class="font-semibold text-gray-800">Drawers</span><span>{(cab as any).drawers}</span>
+            {#if (cab as any).clearance}
+              <span class="font-semibold text-gray-800">Clearance</span><span>{(cab as any).clearance} mm</span>
+            {/if}
+          {/if}
+          {#if cab.type === 'oven'}
+            <span class="font-semibold text-gray-800">Drawer Height</span><span>{(cab as any).drawerHeight} mm</span>
+          {/if}
+          {#if cab.type === 'corner' && (cab as any).fixedSide}
+            <span class="font-semibold text-gray-800">Fixed Side</span><span>{(cab as any).fixedSide} mm</span>
+          {/if}
+        </div>
       </div>
     </div>
   {/each}
 </div>
 
 <style>
+  .summary-svg {
+    max-width: 100%;
+    height: auto;
+    max-height: 250mm;
+  }
+  .summary-svg text {
+    font-size: 18px !important;
+  }
+  .summary-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 16px;
+  }
+  .summary-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .summary-header {
+    position: relative;
+    min-height: 28px;
+  }
   @media print {
     .no-print {
       display: none;
+    }
+    .summary-section,
+    .summary-card,
+    .summary-svg {
+      break-inside: avoid;
+      page-break-inside: avoid;
+      max-height: 250mm;
+    }
+    .summary-section h3 {
+      font-size: 20px !important;
+    }
+    .summary-section p,
+    .summary-card span {
+      font-size: 14px !important;
+    }
+    .summary-svg text {
+      font-size: 22px !important;
+    }
+    .summary-section + .summary-section {
+      page-break-before: auto;
+    }
+    .summary-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    .print-page {
+      page-break-after: auto;
+    }
+    .rotate-print {
+      transform: rotate(90deg) translate(0, -100%);
+      transform-origin: top left;
+      width: 260mm;
+      max-width: 260mm;
+      height: auto;
+      max-height: 260mm;
+      margin: 0 auto;
     }
   }
 </style>

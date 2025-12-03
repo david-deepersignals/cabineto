@@ -1,0 +1,12 @@
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .print-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  header, nav, .app-header, .button-bar {
+    display: none !important;
+  }
+}

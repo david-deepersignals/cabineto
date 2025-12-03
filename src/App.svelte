@@ -546,7 +546,7 @@ function getCabinetFrontBorder(cabinet: Corpus) {
 
 <div class="min-h-screen bg-gray-50">
   <div class="px-4 py-4 sm:px-6 lg:px-8">
-    <header class="mb-6 flex items-center justify-between rounded-xl border bg-white px-4 py-3 shadow">
+    <header class="mb-6 flex items-center justify-between rounded-xl border bg-white px-4 py-3 shadow no-print">
       <div class="flex items-center gap-3">
         <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-500 text-white shadow-inner">
           <svg viewBox="0 0 32 32" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="2">
@@ -615,7 +615,7 @@ function getCabinetFrontBorder(cabinet: Corpus) {
     {/if}
 
     {#if !showSettings && !showSummary}
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 no-print">
         <div class="flex gap-3">
           <button on:click={openAddForm} class="px-4 py-2 bg-blue-600 text-white rounded">
             Add Cabinet

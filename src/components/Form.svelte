@@ -27,6 +27,7 @@
     let fixedSide = '0';
     let fullCorpus = false;
     let insetBack = false;
+    let rabbetBack = false;
     let hiddenHandles = false;
     let isUpperCabinet = false;
     let x = 0
@@ -55,7 +56,11 @@
         type = cabinet.type ?? 'door';
         fullCorpus = cabinet.options?.full ?? false;
         insetBack = cabinet.options?.insetBack ?? false;
+        rabbetBack = cabinet.options?.rabbetBack ?? false;
         hiddenHandles = cabinet.options?.hiddenHandles ?? false;
+        if (insetBack && rabbetBack) {
+            rabbetBack = false;
+        }
         isUpperCabinet = (cabinet as any)?.isUpper ?? false;
         if (type === 'door') {
             doors = (cabinet as DoorCabinet).doors ?? doors;
@@ -85,12 +90,29 @@
     $: isUpperAllowed = isDoor || isCorner;
     $: if (!isUpperAllowed) isUpperCabinet = false;
 
+    function handleInsetBackChange(event: Event) {
+        const target = event.target as HTMLInputElement;
+        insetBack = target.checked;
+        if (insetBack) rabbetBack = false;
+    }
+
+    function handleRabbetBackChange(event: Event) {
+        const target = event.target as HTMLInputElement;
+        rabbetBack = target.checked;
+        if (rabbetBack) insetBack = false;
+    }
+
     const saveCabinet = () => {
         const w = parseFloat(width);
         const h = parseFloat(height);
         const d = parseFloat(depth);
         if (!w || !h || !d) {
             alert('All dimensions (width, height, depth) must be filled.');
+            return;
+        }
+
+        if (insetBack && rabbetBack) {
+            alert('Please choose either inset back or rabbet back, not both.');
             return;
         }
 
@@ -113,6 +135,7 @@
                 shelves ?? 0,
                 {full:fullCorpus,
                 insetBack:insetBack,
+                rabbetBack:rabbetBack,
                 hiddenHandles:hiddenHandles},
                 isUpperCabinet)
         } else if (type === "drawer") {
@@ -131,6 +154,7 @@
                 parseInt(drawerSideHeight),
                 {full:fullCorpus,
                     insetBack:insetBack,
+                    rabbetBack:rabbetBack,
                     hiddenHandles:hiddenHandles},
                 false)
 
@@ -146,7 +170,7 @@
                 h * 10,
                 d * 10,
                 fs * 10,
-                {full:fullCorpus, insetBack:insetBack, hiddenHandles:hiddenHandles},
+                {full:fullCorpus, insetBack:insetBack, rabbetBack:rabbetBack, hiddenHandles:hiddenHandles},
                 isUpperCabinet
             );
         } else if (type === "oven") {
@@ -158,7 +182,7 @@
                 drawerSystem,
                 parseInt(metaboxType),
                 parseInt(drawerSideHeight),
-                {full:fullCorpus, insetBack:insetBack, hiddenHandles:hiddenHandles},
+                {full:fullCorpus, insetBack:insetBack, rabbetBack:rabbetBack, hiddenHandles:hiddenHandles},
                 false,
             );
         } else {
@@ -210,7 +234,10 @@
             <input type="checkbox" bind:checked={fullCorpus} class="border p-1 w-full" />
             </label>
             <label class="block">Inset Back:
-            <input type="checkbox" bind:checked={insetBack} class="border p-1 w-full" />
+            <input type="checkbox" bind:checked={insetBack} on:change={handleInsetBackChange} class="border p-1 w-full" />
+            </label>
+            <label class="block">Rabbet Back:
+            <input type="checkbox" bind:checked={rabbetBack} on:change={handleRabbetBackChange} class="border p-1 w-full" />
             </label>
             <label class="block">Hidden Handles:
             <input type="checkbox" bind:checked={hiddenHandles} class="border p-1 w-full" />

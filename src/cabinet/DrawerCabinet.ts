@@ -1,4 +1,4 @@
-import { Corpus, type CorpusOptions, type Panel } from "./Corpus";
+import { BACK_INSET_OFFSET, Corpus, type CorpusOptions, type Panel, RABBET_DEPTH } from "./Corpus";
 import { get } from 'svelte/store';
 import { materials } from '../stores/materials';
 import { createDrawerPanels } from './drawerHelper';
@@ -51,7 +51,12 @@ export class DrawerCabinet extends Corpus{
         const t = corpus.thickness;
         const usableHeight = this.h - (this.options?.hiddenHandles ? 0 : ((this.drawers + 1) * 2));
         const corpusInnerWidth = this.w - 2 * t;
-        const corpusInnerDepth = this.d - back.thickness - (this.options?.insetBack == true ? (15 + back.thickness) : 0);
+        const backReduction = this.options?.insetBack
+            ? BACK_INSET_OFFSET + back.thickness
+            : this.options?.rabbetBack
+            ? RABBET_DEPTH
+            : back.thickness;
+        const corpusInnerDepth = this.d - backReduction;
         for (let i = 0; i < this.drawers; i++) {
             const pct = this.heights[i] / 100;
             let faceHeight = Math.round(pct * usableHeight);

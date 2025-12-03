@@ -35,8 +35,8 @@ export class CornerCabinet extends Corpus {
                 doorHeight -= HIDDEN_HANDEL_REVEAL -  4;
             }
         }
+
         if (doorWidth > 0) {
-            const { front } = get(materials);
             const hinge = doorHeight > doorWidth ? "2xDUZ" : "2xSIR";
             data.push({
                 length: doorHeight,
@@ -52,6 +52,20 @@ export class CornerCabinet extends Corpus {
                 materialThickness: front.thickness,
             });
         }
+
+        data.push({
+            length: doorHeight,
+            width: this.fixedSide,
+            quantity: 1,
+            edgeBandingLengthRight: 1,
+            edgeBandingLengthLeft: 1,
+            edgeBandingWidthBottom: 1,
+            edgeBandingWidthTop: 1,
+            label: `${this.id}-> Fixed side`,
+            hingeLocation: "",
+            material: front.name,
+            materialThickness: front.thickness,
+        });
         return data;
     }
 }

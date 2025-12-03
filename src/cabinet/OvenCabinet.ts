@@ -21,8 +21,8 @@ export class OvenCabinet extends Corpus {
         options?: CorpusOptions,
         isUpper: boolean = false
     ) {
-        if (options?.insetBack == true) {
-            throw new Error("Oven cabinet cannot be inset back");
+        if (options?.insetBack == true || options?.rabbetBack == true) {
+            throw new Error("Oven cabinet cannot be inset or rabbet back");
         }
 
         super(id, w, h, d, 'oven', options, isUpper);

@@ -203,13 +203,13 @@ function panelDadoSvg(p: Panel,index: number): string {
   const dadoWidth = p.dados?.[0]?.width || 0;
   const dadoDepth = p.dados?.[0]?.depth || 0;
   const dadoOffset = p.dados?.[0]?.offset || 0;
-  const panelThickness = 18; // Assume panel thickness for cross-section
+  const panelThickness = p.materialThickness || 18;
   
   // Adjust canvas size
   const totalW = width + dadoDepth + margin * 3; // Add space for cross-section to the right
   const totalH = Math.max(height, dadoWidth + panelThickness) + margin * 2;
 
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${totalH}" viewBoDx="0 0 ${totalW} ${totalH}">`;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}">`;
 
 
   // Add a title to the SVG
@@ -266,43 +266,46 @@ function panelDadoSvg(p: Panel,index: number): string {
     const crossSectionStartX = margin + width + margin; // Positioned to the right of the top view
     const crossSectionMarginY = margin + 80; // Aligned vertically with the top view
 
-    const crossectionScale = 3
-    const crossSectionWidth = 100
+    const crossectionScale = 3;
+    const crossSectionWidth = 100;
+    const thicknessScaled = panelThickness * crossectionScale;
+    const dadoDepthScaled = dadoDepth * crossectionScale;
+    const dadoWidthScaled = dadoWidth * crossectionScale;
 
     const titleX = crossSectionStartX + crossSectionWidth / 2;
     const titleY = crossSectionMarginY - 50; // Position the title above the cross-section
-    svg += `<text x="${titleX}" y="${titleY}" font-size="16" text-anchor="middle" dominant-baseline="bottom">Prijesjek</text>`;
+    svg += `<text x="${titleX}" y="${titleY}" font-size="16" text-anchor="middle" dominant-baseline="bottom">Presjek</text>`;
 
     // Draw the panel outline (black rectangle)
     svg += `<line x1="${crossSectionStartX}" y1="${crossSectionMarginY}" x2="${crossSectionStartX + crossSectionWidth}" y2="${crossSectionMarginY}" stroke="black"/>`;
-    svg += `<line x1="${crossSectionStartX}" y1="${crossSectionMarginY + (p.materialThickness * crossectionScale)}" x2="${crossSectionStartX + crossSectionWidth}" y2="${crossSectionMarginY + (p.materialThickness * crossectionScale)}" stroke="black"/>`;
-    svg += `<line x1="${crossSectionStartX}" y1="${crossSectionMarginY}" x2="${crossSectionStartX}" y2="${crossSectionMarginY + (p.materialThickness * crossectionScale)}" stroke="black"/>`;
+    svg += `<line x1="${crossSectionStartX}" y1="${crossSectionMarginY + thicknessScaled}" x2="${crossSectionStartX + crossSectionWidth}" y2="${crossSectionMarginY + thicknessScaled}" stroke="black"/>`;
+    svg += `<line x1="${crossSectionStartX}" y1="${crossSectionMarginY}" x2="${crossSectionStartX}" y2="${crossSectionMarginY + thicknessScaled}" stroke="black"/>`;
 
 
     // Perpendicular line (right side of the rectangle) with text in the middle
     const lineStartX = crossSectionStartX + crossSectionWidth + 10; // Right edge of the rectangle
-    const lineMiddleY = crossSectionMarginY + (p.materialThickness * crossectionScale) / 2;
-    svg += `<line x1="${lineStartX}" y1="${crossSectionMarginY}" x2="${lineStartX}" y2="${crossSectionMarginY + (p.materialThickness * crossectionScale)}" stroke="black"/>`;
+    const lineMiddleY = crossSectionMarginY + thicknessScaled / 2;
+    svg += `<line x1="${lineStartX}" y1="${crossSectionMarginY}" x2="${lineStartX}" y2="${crossSectionMarginY + thicknessScaled}" stroke="black"/>`;
     svg += `<line x1="${lineStartX - 2}" y1="${crossSectionMarginY}" x2="${lineStartX + 2}" y2="${crossSectionMarginY}" stroke="black"/>`;
-    svg += `<line x1="${lineStartX - 2}" y1="${crossSectionMarginY + (p.materialThickness * crossectionScale)}" x2="${lineStartX + 2}" y2="${crossSectionMarginY + (p.materialThickness * crossectionScale)}" stroke="black"/>`;
-    svg += `<text x="${lineStartX + 5}" y="${lineMiddleY}" font-size="12" text-anchor="start" dominant-baseline="middle">${p.materialThickness} mm</text>`;
+    svg += `<line x1="${lineStartX - 2}" y1="${crossSectionMarginY + thicknessScaled}" x2="${lineStartX + 2}" y2="${crossSectionMarginY + thicknessScaled}" stroke="black"/>`;
+    svg += `<text x="${lineStartX + 5}" y="${lineMiddleY}" font-size="12" text-anchor="start" dominant-baseline="middle">${panelThickness} mm</text>`;
 
     const dimWidthX = crossSectionStartX + ((dadoOffset * crossectionScale) - dadoWidth);
     // Draw the dado cutout (red rectangle inside the panel)
-    svg += `<rect x="${dimWidthX}" y="${crossSectionMarginY}" width="${dadoWidth * crossectionScale}" height="${dadoDepth * crossectionScale}" fill="none" stroke="red"/>`;
+    svg += `<rect x="${dimWidthX}" y="${crossSectionMarginY}" width="${dadoWidthScaled}" height="${dadoDepthScaled}" fill="none" stroke="red"/>`;
 
     // Depth dimension (horizontal, below dado cutout)
-    svg += `<line x1="${crossSectionStartX - 10}" y1="${crossSectionMarginY}" x2="${crossSectionStartX - 10}" y2="${crossSectionMarginY + dadoDepth * crossectionScale}" stroke="black"/>`;
+    svg += `<line x1="${crossSectionStartX - 10}" y1="${crossSectionMarginY}" x2="${crossSectionStartX - 10}" y2="${crossSectionMarginY + dadoDepthScaled}" stroke="black"/>`;
     svg += `<line x1="${crossSectionStartX - 12}" y1="${crossSectionMarginY}" x2="${crossSectionStartX - 8}" y2="${crossSectionMarginY}" stroke="black"/>`;
-    svg += `<line x1="${crossSectionStartX - 12}" y1="${crossSectionMarginY + dadoDepth * crossectionScale}" x2="${crossSectionStartX - 8}" y2="${crossSectionMarginY + dadoDepth * crossectionScale}" stroke="black"/>`;
+    svg += `<line x1="${crossSectionStartX - 12}" y1="${crossSectionMarginY + dadoDepthScaled}" x2="${crossSectionStartX - 8}" y2="${crossSectionMarginY + dadoDepthScaled}" stroke="black"/>`;
     svg += `<text x="${crossSectionStartX- 30}" y="${crossSectionMarginY + (dadoDepth )}" font-size="12" text-anchor="middle">${dadoDepth} mm</text>`;
 
     // Width dimension (vertical, right of the dado cutout)
 
 
-    svg += `<line x1="${dimWidthX}" y1="${crossSectionMarginY - 10}" x2="${dimWidthX + (dadoWidth * crossectionScale)}" y2="${crossSectionMarginY - 10}" stroke="black"/>`;
+    svg += `<line x1="${dimWidthX}" y1="${crossSectionMarginY - 10}" x2="${dimWidthX + dadoWidthScaled}" y2="${crossSectionMarginY - 10}" stroke="black"/>`;
     svg += `<line x1="${dimWidthX}" y1="${crossSectionMarginY - 12}" x2="${dimWidthX}" y2="${crossSectionMarginY - 8}" stroke="black"/>`;
-    svg += `<line x1="${dimWidthX + (dadoWidth * crossectionScale)}" y1="${crossSectionMarginY - 12}" x2="${dimWidthX + (dadoWidth * crossectionScale)}" y2="${crossSectionMarginY - 8}" stroke="black"/>`;
+    svg += `<line x1="${dimWidthX + dadoWidthScaled}" y1="${crossSectionMarginY - 12}" x2="${dimWidthX + dadoWidthScaled}" y2="${crossSectionMarginY - 8}" stroke="black"/>`;
 
 
     svg += `<text x="${dimWidthX}" y="${crossSectionMarginY - 20}" font-size="12" text-anchor="start" dominant-baseline="middle">${dadoWidth} mm</text>`;
@@ -321,6 +324,91 @@ function panelDadoSvg(p: Panel,index: number): string {
   svg += `</svg>`;
   return svg;
 
+}
+
+function panelRabbetSvg(p: Panel, index: number): string {
+  const rabbet = p.rabbets?.[0];
+  if (!rabbet) return '';
+  const margin = 150;
+  const width = p.length;
+  const height = p.width;
+  const rabbetWidth = rabbet.width;
+  const rabbetDepth = rabbet.depth;
+  // For the drawing, setback is 4 mm (into edge) and cut depth is 7 mm (into face)
+  const displaySetback = rabbetDepth; // 4 mm
+  const displayDepth = rabbetWidth;   // 7 mm
+  const panelThickness = p.materialThickness || 18;
+
+  const crossSectionScale = 3;
+  const rabbetWidthPx = displaySetback * crossSectionScale;
+  const rabbetDepthPx = displayDepth * crossSectionScale;
+  const panelThicknessPx = panelThickness * crossSectionScale;
+  const crossSectionWidth = rabbetWidthPx + 120;
+  const crossSectionStartX = margin + width + margin;
+  const crossSectionMarginY = margin + 80;
+  const crossSectionBottom = crossSectionMarginY + panelThicknessPx;
+  const totalW = width + crossSectionWidth + margin * 3;
+  const totalH = Math.max(height + margin * 2, crossSectionBottom + margin);
+
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}">`;
+  svg += `<text x="${margin}" y="${margin - 70}" font-size="20" text-anchor="start" dominant-baseline="auto">#${index} ${p.label}</text>`;
+
+  // Top view with rabbet highlighted on the back edge
+  svg += `<rect x="${margin}" y="${margin}" width="${width}" height="${height}" fill="none" stroke="black"/>`;
+  svg += `<rect x="${margin}" y="${margin}" width="${width}" height="${displaySetback}" fill="rgba(255,0,0,0.12)" stroke="red"/>`;
+
+  // Rabbet width dimension (back edge)
+  const rabbetDimX = margin - 10;
+  svg += `<line x1="${rabbetDimX}" y1="${margin}" x2="${rabbetDimX}" y2="${margin + displaySetback}" stroke="black"/>`;
+  svg += `<line x1="${rabbetDimX - 2}" y1="${margin}" x2="${rabbetDimX + 2}" y2="${margin}" stroke="black"/>`;
+  svg += `<line x1="${rabbetDimX - 2}" y1="${margin + displaySetback}" x2="${rabbetDimX + 2}" y2="${margin + displaySetback}" stroke="black"/>`;
+  svg += `<text x="${rabbetDimX - 4}" y="${margin + displaySetback / 2}" font-size="12" text-anchor="end" dominant-baseline="middle">${displaySetback} mm</text>`;
+
+  // Panel width dimension (top)
+  svg += `<line x1="${margin}" y1="${margin - 20}" x2="${margin + width}" y2="${margin - 20}" stroke="black"/>`;
+  svg += `<line x1="${margin}" y1="${margin - 22}" x2="${margin}" y2="${margin - 18}" stroke="black"/>`;
+  svg += `<line x1="${margin + width}" y1="${margin - 22}" x2="${margin + width}" y2="${margin - 18}" stroke="black"/>`;
+  svg += `<text x="${margin + width / 2}" y="${margin - 25}" font-size="12" text-anchor="middle">${width} mm</text>`;
+
+  // Panel height dimension (right)
+  const rabbetHeightDimX = margin + width + 10;
+  svg += `<line x1="${rabbetHeightDimX}" y1="${margin}" x2="${rabbetHeightDimX}" y2="${margin + height}" stroke="black"/>`;
+  svg += `<line x1="${rabbetHeightDimX - 2}" y1="${margin}" x2="${rabbetHeightDimX + 2}" y2="${margin}" stroke="black"/>`;
+  svg += `<line x1="${rabbetHeightDimX - 2}" y1="${margin + height}" x2="${rabbetHeightDimX + 2}" y2="${margin + height}" stroke="black"/>`;
+  svg += `<text x="${rabbetHeightDimX + 5}" y="${margin + height / 2}" font-size="12" text-anchor="start" dominant-baseline="middle">${height} mm</text>`;
+
+  // Cross-section
+  const titleX = crossSectionStartX + crossSectionWidth / 2;
+  const titleY = crossSectionMarginY - 50;
+  const rabbetY = crossSectionMarginY; // rabbet cut starts at the inside face
+  const shoulderY = rabbetY + rabbetDepthPx; // depth into the panel
+  svg += `<text x="${titleX}" y="${titleY}" font-size="16" text-anchor="middle" dominant-baseline="bottom">Presjek</text>`;
+  svg += `<rect x="${crossSectionStartX}" y="${crossSectionMarginY}" width="${crossSectionWidth}" height="${panelThicknessPx}" fill="none" stroke="black"/>`;
+  svg += `<rect x="${crossSectionStartX}" y="${rabbetY}" width="${rabbetWidthPx}" height="${rabbetDepthPx}" fill="rgba(255,0,0,0.12)" stroke="red"/>`;
+
+  // Thickness dimension
+  const thicknessDimX = crossSectionStartX + crossSectionWidth + 10;
+  const thicknessMidY = crossSectionMarginY + panelThicknessPx / 2;
+  svg += `<line x1="${thicknessDimX}" y1="${crossSectionMarginY}" x2="${thicknessDimX}" y2="${crossSectionBottom}" stroke="black"/>`;
+  svg += `<line x1="${thicknessDimX - 2}" y1="${crossSectionMarginY}" x2="${thicknessDimX + 2}" y2="${crossSectionMarginY}" stroke="black"/>`;
+  svg += `<line x1="${thicknessDimX - 2}" y1="${crossSectionBottom}" x2="${thicknessDimX + 2}" y2="${crossSectionBottom}" stroke="black"/>`;
+  svg += `<text x="${thicknessDimX + 5}" y="${thicknessMidY}" font-size="12" text-anchor="start" dominant-baseline="middle">Debljina ${panelThickness} mm</text>`;
+
+  // Rabbet depth dimension
+  const depthDimX = crossSectionStartX - 10;
+  svg += `<line x1="${depthDimX}" y1="${rabbetY}" x2="${depthDimX}" y2="${shoulderY}" stroke="black"/>`;
+  svg += `<line x1="${depthDimX - 2}" y1="${rabbetY}" x2="${depthDimX + 2}" y2="${rabbetY}" stroke="black"/>`;
+  svg += `<line x1="${depthDimX - 2}" y1="${shoulderY}" x2="${depthDimX + 2}" y2="${shoulderY}" stroke="black"/>`;
+  svg += `<text x="${depthDimX - 4}" y="${rabbetY + rabbetDepthPx / 2}" font-size="12" text-anchor="end" dominant-baseline="middle">${displayDepth} mm</text>`;
+
+  // Rabbet width dimension
+  svg += `<line x1="${crossSectionStartX}" y1="${crossSectionMarginY - 10}" x2="${crossSectionStartX + rabbetWidthPx}" y2="${crossSectionMarginY - 10}" stroke="black"/>`;
+  svg += `<line x1="${crossSectionStartX}" y1="${crossSectionMarginY - 12}" x2="${crossSectionStartX}" y2="${crossSectionMarginY - 8}" stroke="black"/>`;
+  svg += `<line x1="${crossSectionStartX + rabbetWidthPx}" y1="${crossSectionMarginY - 12}" x2="${crossSectionStartX + rabbetWidthPx}" y2="${crossSectionMarginY - 8}" stroke="black"/>`;
+  svg += `<text x="${crossSectionStartX + rabbetWidthPx / 2}" y="${crossSectionMarginY - 20}" font-size="12" text-anchor="middle" dominant-baseline="middle">${displaySetback} mm</text>`;
+
+  svg += `</svg>`;
+  return svg;
 }
 
 async function downloadDadoDrawings() {
@@ -345,12 +433,40 @@ async function downloadDadoDrawings() {
   URL.revokeObjectURL(url);
 }
 
+async function downloadRabbetDrawings() {
+  const zip = new JSZip();
+  let index = 1;
+  $cabinets.forEach(cab => {
+    cab.panels().forEach((p: Panel) => {
+      if (p.rabbets && p.rabbets.length) {
+        const svg = panelRabbetSvg(p, index);
+        const safeLabel = p.label.replace(/[^a-z0-9]/gi, '_');
+        zip.file(`${index}_${safeLabel}.svg`, svg);
+        index++;
+      }
+    });
+  });
+  if (index === 1) {
+    alert('No rabbet panels found.');
+    return;
+  }
+  const content = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(content);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'rabbet_drawings.zip';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function csvGeneral() {
-  let csv = "length (mm),width (mm),quantity,edge banding length right,edge banding length left,edge banding width bottom,edge banding width top,label,hinge location,dado,material name,material thickness\n";
+  let csv = "length (mm),width (mm),quantity,edge banding length right,edge banding length left,edge banding width bottom,edge banding width top,label,hinge location,dado/rabbet,material name,material thickness\n";
 
   $cabinets.forEach(cab => {
     cab.panels().forEach((p: Panel) => {
       const dadoStr = p.dados?.map(d => `${d.offset}/${d.depth}/${d.width}`).join('|') ?? '';
+      const rabbetStr = p.rabbets?.map(r => `${r.width}/${r.depth}`).join('|') ?? '';
+      const joinery = [dadoStr, rabbetStr ? `Rabbet:${rabbetStr}` : ''].filter(Boolean).join(';');
       csv += [
         p.length,
         p.width,
@@ -361,7 +477,7 @@ function csvGeneral() {
         p.edgeBandingWidthTop,
         p.label,
         p.hingeLocation,
-        dadoStr,
+        joinery,
         p.material,
         p.materialThickness
       ].join(",") + "\n";
@@ -399,7 +515,7 @@ function csvMaxMoris() {
         '',
         '',
         '',
-          p.dados?.map(d => `${d.offset}/${d.depth}/${d.width}`).join('|') ?? '',
+          [p.dados?.map(d => `${d.offset}/${d.depth}/${d.width}`).join('|') ?? '', p.rabbets?.map(r => `${r.width}/${r.depth}`).join('|') ?? ''].filter(Boolean).join(';'),
           p.hingeLocation,
           ''
         ].join(",") + "\n";
@@ -419,6 +535,7 @@ function csvMaxMoris() {
   </select>
   <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={downloadCSV}>Download CSV</button>
   <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={downloadDadoDrawings}>Download Dado Drawings</button>
+  <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={downloadRabbetDrawings}>Download Rabbet Drawings</button>
   <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => window.print()}>Print</button>
   <button class="px-4 py-2 bg-blue-600 text-white rounded" on:click={() => dispatch('close')}>Back</button>
 </div>

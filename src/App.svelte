@@ -1,12 +1,14 @@
 <script lang="ts">
 import Form from "./components/Form.svelte";
-import SettingsModal from "./components/SettingsModal.svelte";
+import SettingsPage from "./components/SettingsPage.svelte";
 import LayoutSummary from "./components/LayoutSummary.svelte";
-import CostModal from "./components/CostModal.svelte";
 import BackupModal from "./components/BackupModal.svelte";
+import CostPanel from "./components/CostPanel.svelte";
 import { cabinets } from './stores/cabinets';
 import { scale } from './stores/scale';
 import { room } from './stores/room';
+import { materials } from './stores/materials';
+import { summarizeCosts } from './utils/cost';
 import type { Corpus } from './cabinet/Corpus';
 
 const GRID_SIZE = 1;
@@ -140,11 +142,12 @@ $: layoutWidth = layoutWidthMm / $scale;
 $: layoutHeight = layoutHeightMm / $scale;
 
 let showForm = false;
-  let showSettings = false;
-  let showSummary = false;
-  let showBackup = false;
-  let showCost = false;
-  let editingCabinet: Corpus | null = null;
+let showSettings = false;
+let showSummary = false;
+let showBackup = false;
+let showCostPanel = false;
+let editingCabinet: Corpus | null = null;
+$: costSummary = summarizeCosts($cabinets, $materials);
 
   const openAddForm = () => {
     editingCabinet = null;
@@ -161,12 +164,15 @@ let showForm = false;
     editingCabinet = null;
   };
 
-  const toggleSettings = () => {
-    showSettings = !showSettings;
+  const openSettings = () => {
+    showSettings = true;
   };
 
   const toggleBackup = () => {
     showBackup = !showBackup;
+  };
+  const openCostPanel = () => {
+    showCostPanel = true;
   };
 
   const deleteCabinet = (id: string) => {
@@ -543,29 +549,87 @@ function getCabinetFrontBorder(cabinet: Corpus) {
   }
 </style>
 
-<div class="h-full">
-  <h2 class="text-xl font-bold mb-4">Visual Cabinet Planner</h2>
+<div class="min-h-screen bg-gray-50">
+  <div class="px-4 py-4 sm:px-6 lg:px-8">
+    <header class="mb-6 flex items-center justify-between rounded-xl border bg-white px-4 py-3 shadow">
+      <div class="flex items-center gap-3">
+        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-500 text-white shadow-inner">
+          <svg viewBox="0 0 32 32" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="4" width="12" height="12" rx="2" />
+            <rect x="18" y="4" width="10" height="8" rx="2" />
+            <rect x="4" y="18" width="24" height="10" rx="2" />
+            <path d="M10 18v10M22 4v8" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-wide text-gray-500">Visual Cabinet</p>
+          <h1 class="text-xl font-semibold text-gray-900">Planner</h1>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        {#if !showSettings && !showSummary}
+          <button
+            class="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800 shadow-sm hover:bg-blue-100"
+            on:click={() => showCostPanel = !showCostPanel}
+          >
+            Total: ${costSummary.total.toFixed(2)}
+          </button>
+        {/if}
+        <div class="flex items-center gap-2">
+          <button
+            class="inline-flex items-center gap-2 rounded-lg border border-blue-100 px-3 py-2 text-sm text-gray-800 bg-white hover:bg-blue-50 shadow-sm"
+            on:click={openSettings}
+          >
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M9.5 2.5h1l.6 2.1a5.8 5.8 0 0 1 1.6.9l2-.7.7 1.2-1.3 1.6c.1.3.1.6.1.9s0 .6-.1.9l1.3 1.6-.7 1.2-2-.7a5.8 5.8 0 0 1-1.6.9l-.6 2.1h-1l-.6-2.1a5.8 5.8 0 0 1-1.6-.9l-2 .7-.7-1.2 1.3-1.6a4 4 0 0 1-.1-.9c0-.3 0-.6.1-.9l-1.3-1.6.7-1.2 2 .7c.5-.4 1-.7 1.6-.9l.6-2.1Z" />
+              <circle cx="10" cy="10" r="2.5" />
+            </svg>
+            Settings
+          </button>
+          <button
+            class="inline-flex items-center gap-2 rounded-lg border border-blue-100 px-3 py-2 text-sm text-gray-800 bg-white hover:bg-blue-50 shadow-sm"
+            on:click={toggleBackup}
+          >
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M5 16.5a5 5 0 0 1 .6-9.9A6 6 0 0 1 18 9h.3A4.7 4.7 0 0 1 18 19H8" />
+              <path d="M9.5 19.5 8 21l1.5 1.5" />
+              <path d="M15.5 19.5 17 21l-1.5 1.5" />
+            </svg>
+            Backups
+          </button>
+        </div>
+      </div>
+    </header>
+    {#if showSettings}
+      <div class="flex gap-4 mb-4">
+        <button
+          class="px-4 py-2 rounded border text-gray-700 bg-white shadow-sm inline-flex items-center gap-2"
+          on:click={() => showSettings = false}
+        >
+          ← Back to planner
+        </button>
+      </div>
+    {:else}
+      <div class="mb-4"></div>
+    {/if}
+
+    {#if showCostPanel && !showSettings && !showSummary}
+      <div class="mb-4 flex justify-end">
+        <CostPanel inline on:close={() => showCostPanel = false} />
+      </div>
+    {/if}
 
   {#if showSummary}
     <LayoutSummary on:close={() => showSummary = false} />
-  {:else if showCost}
-    <CostModal on:close={() => showCost = false} />
+  {:else if showSettings}
+    <SettingsPage on:close={() => showSettings = false} />
   {:else}
     <div class="flex gap-4 mb-4">
       <button on:click={openAddForm} class="px-4 py-2 bg-blue-600 text-white rounded">
         Add Cabinet
       </button>
-      <button on:click={toggleSettings} class="px-4 py-2 bg-purple-600 text-white rounded">
-        {showSettings ? 'Close Settings' : 'Settings'}
-      </button>
-      <button class="px-4 py-2 bg-yellow-600 text-white rounded" on:click={toggleBackup}>
-        Backups
-      </button>
       <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => showSummary = true}>
         Layout Summary
-      </button>
-      <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={() => showCost = true}>
-        Cost Summary
       </button>
     </div>
 
@@ -661,11 +725,12 @@ function getCabinetFrontBorder(cabinet: Corpus) {
     {#if showForm}
       <Form cabinet={editingCabinet} on:close={closeForm} />
     {/if}
-    {#if showSettings}
-      <SettingsModal on:close={() => showSettings = false} />
-    {/if}
   {/if}
   {#if showBackup}
     <BackupModal on:close={() => showBackup = false} />
   {/if}
+  {#if showCostPanel}
+    <CostPanel on:close={() => showCostPanel = false} />
+  {/if}
+</div>
 </div>

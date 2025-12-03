@@ -2,6 +2,7 @@
 import { cabinets } from '../stores/cabinets';
 import { createEventDispatcher, onMount } from 'svelte';
 import { scale } from '../stores/scale';
+import { projects } from '../stores/projects';
 import type { Panel } from '../cabinet/Corpus';
 import JSZip from 'jszip';
 
@@ -47,6 +48,7 @@ let isoDisplay = { width: 0, height: 0 };
 let viewportHeight = 900;
 let viewportWidth = 1200;
 let isoRotate = false;
+let activeProjectName = 'Project';
 
 $: iso = prepareIso();
 $: {
@@ -64,8 +66,15 @@ onMount(() => {
     viewportWidth = window.innerWidth;
   };
   updateSize();
+  const unsubscribe = projects.subscribe(p => {
+    const found = p.projects.find(pr => pr.id === p.activeId);
+    activeProjectName = found?.name || 'Project';
+  });
   window.addEventListener('resize', updateSize);
-  return () => window.removeEventListener('resize', updateSize);
+  return () => {
+    window.removeEventListener('resize', updateSize);
+    unsubscribe();
+  };
 });
 
 function getAxes(view: View) {
@@ -450,6 +459,14 @@ function panelRabbetSvg(p: Panel, index: number): string {
   return svg;
 }
 
+const svgToDataUri = (svg: string) =>
+  svg ? `data:image/svg+xml;utf8,${encodeURIComponent(svg)}` : '';
+
+const displayLabel = (label: string) => {
+  const parts = label.split('->').map(p => p.trim()).filter(Boolean);
+  return parts[1] ?? parts[0] ?? label;
+};
+
 async function downloadDadoDrawings() {
   const zip = new JSZip();
   let index = 1;
@@ -577,6 +594,11 @@ function csvMaxMoris() {
   <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={downloadRabbetDrawings}>Download Rabbet Drawings</button>
   <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => window.print()}>Print</button>
   <button class="px-4 py-2 bg-blue-600 text-white rounded" on:click={() => dispatch('close')}>Back</button>
+</div>
+
+<div class="summary-section print-page project-header">
+  <div class="project-title">{activeProjectName}</div>
+  <div class="project-subtitle">Cabinet layout summary</div>
 </div>
 
 <div class="summary-section print-page">
@@ -872,7 +894,7 @@ function csvMaxMoris() {
 {/each}
 
 <h3 class="font-semibold mb-2">Cabinet Drawings</h3>
-<div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 summary-section summary-grid print-page">
+<div class="summary-section summary-grid print-page">
   {#each $cabinets as cab}
     {@const dims = getOrientedDims(cab)}
     {@const w = cab.w / $scale}
@@ -880,6 +902,8 @@ function csvMaxMoris() {
     {@const wIso = dims.w / $scale}
     {@const dIso = dims.d / $scale}
     {@const hIso = cab.h / $scale}
+    {@const panels = cab.panels()}
+    {@const joineryPanels = panels.filter((p: Panel) => (p.dados?.length || p.rabbets?.length))}
     {@const isoPoints = [
       isoProject(0, 0, 0),
       isoProject(wIso, 0, 0),
@@ -929,89 +953,116 @@ function csvMaxMoris() {
         <div class="text-base font-semibold text-gray-900">{cab.id}</div>
         <div class="text-sm text-gray-700 capitalize">{cab.type}</div>
       </div>
-      <svg
-        class={`summary-svg ${rotateWide ? 'rotate-print' : ''}`}
-        width={isoDisplay.width}
-        height={isoDisplay.height}
-        viewBox={`0 0 ${isoSvgW} ${isoSvgH}`}
-        style="border:1px solid #000; margin-top:4px"
-      >
-        <g transform={`translate(${isoTx},${isoTy})`}>
-          <polygon points={`${p5.x},${p5.y} ${p6.x},${p6.y} ${p7.x},${p7.y} ${p8.x},${p8.y}`} fill="none" stroke="black" />
-          <polygon points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`} fill="none" stroke="black" />
-          <line x1={p1.x} y1={p1.y} x2={p5.x} y2={p5.y} stroke="black" />
-          <line x1={p2.x} y1={p2.y} x2={p6.x} y2={p6.y} stroke="black" />
-          <line x1={p3.x} y1={p3.y} x2={p7.x} y2={p7.y} stroke="black" />
-          <line x1={p4.x} y1={p4.y} x2={p8.x} y2={p8.y} stroke="black" />
+      <div class="summary-body">
+        <div class="summary-iso">
+          <svg
+            class={`summary-svg ${rotateWide ? 'rotate-print' : ''}`}
+            width={isoDisplay.width}
+            height={isoDisplay.height}
+            viewBox={`0 0 ${isoSvgW} ${isoSvgH}`}
+            style="border:1px solid #000; margin-top:4px"
+          >
+            <g transform={`translate(${isoTx},${isoTy})`}>
+              <polygon points={`${p5.x},${p5.y} ${p6.x},${p6.y} ${p7.x},${p7.y} ${p8.x},${p8.y}`} fill="none" stroke="black" />
+              <polygon points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`} fill="none" stroke="black" />
+              <line x1={p1.x} y1={p1.y} x2={p5.x} y2={p5.y} stroke="black" />
+              <line x1={p2.x} y1={p2.y} x2={p6.x} y2={p6.y} stroke="black" />
+              <line x1={p3.x} y1={p3.y} x2={p7.x} y2={p7.y} stroke="black" />
+              <line x1={p4.x} y1={p4.y} x2={p8.x} y2={p8.y} stroke="black" />
 
-          <line x1={p1.x + offX} y1={p1.y + offY} x2={p2.x + offX} y2={p2.y + offY} stroke="black"/>
-          <line x1={p1.x + offX} y1={p1.y + offY - 5} x2={p1.x + offX} y2={p1.y + offY + 5} stroke="black"/>
-          <line x1={p2.x + offX} y1={p2.y + offY - 5} x2={p2.x + offX} y2={p2.y + offY + 5} stroke="black"/>
-          <text x={(p1.x + p2.x) / 2 + offX} y={widthY + offY + 15} text-anchor="middle"
-                font-size="10">{Math.round(dims.w)} mm
-          </text>
+              <line x1={p1.x + offX} y1={p1.y + offY} x2={p2.x + offX} y2={p2.y + offY} stroke="black"/>
+              <line x1={p1.x + offX} y1={p1.y + offY - 5} x2={p1.x + offX} y2={p1.y + offY + 5} stroke="black"/>
+              <line x1={p2.x + offX} y1={p2.y + offY - 5} x2={p2.x + offX} y2={p2.y + offY + 5} stroke="black"/>
+              <text x={(p1.x + p2.x) / 2 + offX} y={widthY + offY + 15} text-anchor="middle"
+                    font-size="10">{Math.round(dims.w)} mm
+              </text>
 
-          <line x1={heightX} y1={p1.y} x2={heightX} y2={p5.y} stroke="black" />
-          <line x1={heightX - 5} y1={p1.y} x2={heightX + 5} y2={p1.y} stroke="black" />
-          <line x1={heightX - 5} y1={p5.y} x2={heightX + 5} y2={p5.y} stroke="black" />
-          <text x={heightX - 5} y={(p1.y + p5.y) / 2} text-anchor="end" dominant-baseline="middle" font-size="10">{Math.round(cab.h)} mm</text>
+              <line x1={heightX} y1={p1.y} x2={heightX} y2={p5.y} stroke="black" />
+              <line x1={heightX - 5} y1={p1.y} x2={heightX + 5} y2={p1.y} stroke="black" />
+              <line x1={heightX - 5} y1={p5.y} x2={heightX + 5} y2={p5.y} stroke="black" />
+              <text x={heightX - 5} y={(p1.y + p5.y) / 2} text-anchor="end" dominant-baseline="middle" font-size="10">{Math.round(cab.h)} mm</text>
 
-          <line x1={startX} y1={startY} x2={endX} y2={endY} stroke="black" />
-          <line x1={startX - offNX * 5} y1={startY - offNY * 5} x2={startX + offNX * 5} y2={startY + offNY * 5} stroke="black" />
-          <line x1={endX - offNX * 5} y1={endY - offNY * 5} x2={endX + offNX * 5} y2={endY + offNY * 5} stroke="black" />
-          <text x={midX} y={midY} text-anchor="middle" font-size="10">{Math.round(dims.d)} mm</text>
+              <line x1={startX} y1={startY} x2={endX} y2={endY} stroke="black" />
+              <line x1={startX - offNX * 5} y1={startY - offNY * 5} x2={startX + offNX * 5} y2={startY + offNY * 5} stroke="black" />
+              <line x1={endX - offNX * 5} y1={endY - offNY * 5} x2={endX + offNX * 5} y2={endY + offNY * 5} stroke="black" />
+              <text x={midX} y={midY} text-anchor="middle" font-size="10">{Math.round(dims.d)} mm</text>
 
-          {#if cab.type === 'door' && (cab as any).doors}
-            {@const doorCount = (cab as any).doors}
-            <text x={midX} y={p5.y - 40} text-anchor="middle" font-size="10">Doors: {doorCount}</text>
-          {/if}
+              {#if cab.type === 'door' && (cab as any).doors}
+                {@const doorCount = (cab as any).doors}
+                <text x={midX} y={p5.y - 40} text-anchor="middle" font-size="10">Doors: {doorCount}</text>
+              {/if}
 
-          {#if cab.type === 'drawer' && (cab as any).drawers}
-            {@const drawerCount = (cab as any).drawers}
-            <text x={midX} y={p5.y - 20} text-anchor="middle" font-size="10">Drawers: {drawerCount}</text>
-          {/if}
+              {#if cab.type === 'drawer' && (cab as any).drawers}
+                {@const drawerCount = (cab as any).drawers}
+                <text x={midX} y={p5.y - 20} text-anchor="middle" font-size="10">Drawers: {drawerCount}</text>
+              {/if}
 
-          {#if cab.type === 'drawer' && (cab as any).clearance}
-            {@const clearance = (cab as any).clearance}
-            <text x={midX} y={p5.y + 20} text-anchor="middle" font-size="10">Clearance: {clearance} mm</text>
-          {/if}
+              {#if cab.type === 'drawer' && (cab as any).clearance}
+                {@const clearance = (cab as any).clearance}
+                <text x={midX} y={p5.y + 20} text-anchor="middle" font-size="10">Clearance: {clearance} mm</text>
+              {/if}
 
-          {#if cab.type === 'oven' && (cab as any).drawerHeight}
-            {@const drawerHeight = (cab as any).drawerHeight}
-            <text x={midX} y={p5.y + 40} text-anchor="middle" font-size="10">Drawer Height: {drawerHeight} mm</text>
-          {/if}
+              {#if cab.type === 'oven' && (cab as any).drawerHeight}
+                {@const drawerHeight = (cab as any).drawerHeight}
+                <text x={midX} y={p5.y + 40} text-anchor="middle" font-size="10">Drawer Height: {drawerHeight} mm</text>
+              {/if}
 
-          {#if cab.type === 'corner' && (cab as any).fixedSide}
-            {@const fixedSide = (cab as any).fixedSide}
-            <text x={midX} y={p5.y + 60} text-anchor="middle" font-size="10">Fixed Side: {fixedSide} mm</text>
-          {/if}
-          
-          
-          
-        </g>
-      </svg>
-      <div class="text-sm mt-2 w-full">
-        <div class="grid grid-cols-2 gap-2 text-gray-800">
-          <span class="font-semibold">Width</span><span class="font-semibold">{Math.round(cab.w)} mm</span>
-          <span class="font-semibold">Height</span><span class="font-semibold">{Math.round(cab.h)} mm</span>
-          <span class="font-semibold">Depth</span><span class="font-semibold">{Math.round(cab.d)} mm</span>
-          {#if cab.type === 'door'}
-            <span class="font-semibold text-gray-800">Doors</span><span>{(cab as any).doors}</span>
-          {/if}
-          {#if cab.type === 'drawer'}
-            <span class="font-semibold text-gray-800">Drawers</span><span>{(cab as any).drawers}</span>
-            {#if (cab as any).clearance}
-              <span class="font-semibold text-gray-800">Clearance</span><span>{(cab as any).clearance} mm</span>
+              {#if cab.type === 'corner' && (cab as any).fixedSide}
+                {@const fixedSide = (cab as any).fixedSide}
+                <text x={midX} y={p5.y + 60} text-anchor="middle" font-size="10">Fixed Side: {fixedSide} mm</text>
+              {/if}
+              
+              
+              
+            </g>
+          </svg>
+        </div>
+        <div class="text-sm mt-2 w-full summary-meta">
+          <div class="grid grid-cols-2 gap-2 text-gray-800">
+            <span class="font-semibold">Width</span><span class="font-semibold">{Math.round(cab.w)} mm</span>
+            <span class="font-semibold">Height</span><span class="font-semibold">{Math.round(cab.h)} mm</span>
+            <span class="font-semibold">Depth</span><span class="font-semibold">{Math.round(cab.d)} mm</span>
+            {#if cab.type === 'door'}
+              <span class="font-semibold text-gray-800">Doors</span><span>{(cab as any).doors}</span>
             {/if}
-          {/if}
-          {#if cab.type === 'oven'}
-            <span class="font-semibold text-gray-800">Drawer Height</span><span>{(cab as any).drawerHeight} mm</span>
-          {/if}
-          {#if cab.type === 'corner' && (cab as any).fixedSide}
-            <span class="font-semibold text-gray-800">Fixed Side</span><span>{(cab as any).fixedSide} mm</span>
-          {/if}
+            {#if cab.type === 'drawer'}
+              <span class="font-semibold text-gray-800">Drawers</span><span>{(cab as any).drawers}</span>
+              {#if (cab as any).clearance}
+                <span class="font-semibold text-gray-800">Clearance</span><span>{(cab as any).clearance} mm</span>
+              {/if}
+            {/if}
+            {#if cab.type === 'oven'}
+              <span class="font-semibold text-gray-800">Drawer Height</span><span>{(cab as any).drawerHeight} mm</span>
+            {/if}
+            {#if cab.type === 'corner' && (cab as any).fixedSide}
+              <span class="font-semibold text-gray-800">Fixed Side</span><span>{(cab as any).fixedSide} mm</span>
+            {/if}
+          </div>
         </div>
       </div>
+      {#if joineryPanels.length}
+        <div class="joinery-section">
+          <div class="joinery-title">Dados & Rabbets</div>
+          <div class="joinery-grid">
+            {#each joineryPanels as panel, i}
+              {@const dadoUri = panel.dados?.length ? svgToDataUri(panelDadoSvg(panel, i + 1)) : ''}
+              {@const rabbetUri = panel.rabbets?.length ? svgToDataUri(panelRabbetSvg(panel, i + 1)) : ''}
+              <div class="joinery-card">
+                <div class="joinery-meta">
+                  <span>{displayLabel(panel.label)}</span>
+                  <span class="text-xs text-gray-500">Qty {panel.quantity}</span>
+                </div>
+                {#if dadoUri}
+                  <img src={dadoUri} alt="Dado drawing" class="joinery-img" />
+                {/if}
+                {#if rabbetUri}
+                  <img src={rabbetUri} alt="Rabbet drawing" class="joinery-img" />
+                {/if}
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/if}
     </div>
   {/each}
 </div>
@@ -1023,16 +1074,96 @@ function csvMaxMoris() {
     max-height: 250mm;
   }
   .summary-svg text {
-    font-size: 18px !important;
+    font-size: 16px !important;
   }
   .summary-section {
     break-inside: avoid;
     page-break-inside: avoid;
     margin-bottom: 16px;
   }
+  .project-header {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 12px 16px;
+    background: #f9fafb;
+  }
+  .project-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+  }
+  .project-subtitle {
+    font-size: 14px;
+    color: #4b5563;
+    margin-top: 4px;
+  }
   .summary-card {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+  .summary-body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .summary-iso {
+    flex: 1 1 55%;
+    min-width: 260px;
+  }
+  .summary-meta {
+    flex: 1 1 40%;
+    min-width: 220px;
+    margin-top: 0;
+  }
+  .summary-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .joinery-section {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .joinery-title {
+    font-weight: 600;
+    color: #111827;
+    font-size: 15px;
+  }
+  .joinery-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+  .joinery-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    break-inside: avoid;
+  }
+  .joinery-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 600;
+    color: #374151;
+  }
+  .joinery-img {
+    width: 100%;
+    height: auto;
+    max-height: 260px;
+    object-fit: contain;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
   }
   .summary-header {
     position: relative;
@@ -1049,6 +1180,12 @@ function csvMaxMoris() {
       page-break-inside: avoid;
       max-height: 250mm;
     }
+    .project-header {
+      page-break-after: avoid;
+    }
+    .summary-body {
+      flex-wrap: nowrap;
+    }
     .summary-section h3 {
       font-size: 20px !important;
     }
@@ -1057,17 +1194,26 @@ function csvMaxMoris() {
       font-size: 14px !important;
     }
     .summary-svg text {
-      font-size: 22px !important;
+      font-size: 18px !important;
     }
     .summary-section + .summary-section {
       page-break-before: auto;
     }
     .summary-grid {
-      grid-template-columns: 1fr;
+      display: flex;
+      flex-direction: column;
       gap: 20px;
     }
     .print-page {
       page-break-after: auto;
+    }
+    .joinery-section,
+    .joinery-card {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .joinery-img {
+      max-height: 180mm;
     }
     .rotate-print {
       transform: rotate(90deg) translate(0, -100%);

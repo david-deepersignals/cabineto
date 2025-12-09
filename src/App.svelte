@@ -1,6 +1,7 @@
 <script lang="ts">
 import Form from "./components/Form.svelte";
 import SettingsPage from "./components/SettingsPage.svelte";
+import HelpPage from "./components/HelpPage.svelte";
 import LayoutSummary from "./components/LayoutSummary.svelte";
 import CostPanel from "./components/CostPanel.svelte";
 import ProjectSidebar from "./components/ProjectSidebar.svelte";
@@ -145,6 +146,7 @@ $: layoutHeight = layoutHeightMm / $scale;
 
 let showForm = false;
 let showSettings = false;
+let showHelp = false;
 let showSummary = false;
 let showCostPanel = false;
 let showProjects = false;
@@ -168,6 +170,9 @@ $: activeProject = $projects.projects.find(p => p.id === $projects.activeId);
   };
 
   const openSettings = () => {
+    showHelp = false;
+    showSummary = false;
+    showForm = false;
     showSettings = true;
   };
 
@@ -586,6 +591,22 @@ function getCabinetFrontBorder(cabinet: Corpus) {
             {/each}
           </select>
           <button
+            class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-blue-50"
+            on:click={() => {
+              showHelp = true;
+              showSettings = false;
+              showSummary = false;
+              showForm = false;
+              showCostPanel = false;
+            }}
+          >
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+              <circle cx="10" cy="10" r="7" />
+              <path d="M10 6.5c-1.1 0-2 .7-2 1.8 0 1 1.1 1.3 1.8 1.6.8.3 1.2.7 1.2 1.4 0 .9-.7 1.4-1.5 1.4-.8 0-1.5-.5-1.5-1.4m1.5 3.3v.3" />
+            </svg>
+            {$t('Help')}
+          </button>
+          <button
             class="inline-flex items-center gap-2 rounded-lg border border-blue-100 px-3 py-2 text-sm text-gray-800 bg-white hover:bg-blue-50 shadow-sm"
             on:click={openSettings}
           >
@@ -612,11 +633,14 @@ function getCabinetFrontBorder(cabinet: Corpus) {
         </button>
       </div>
     </header>
-    {#if showSettings}
+    {#if showSettings || showHelp}
       <div class="flex gap-4 mb-4">
         <button
           class="px-4 py-2 rounded border text-gray-700 bg-white shadow-sm inline-flex items-center gap-2"
-          on:click={() => showSettings = false}
+          on:click={() => {
+            showSettings = false;
+            showHelp = false;
+          }}
         >
           ← {$t('Back to planner')}
         </button>
@@ -625,7 +649,7 @@ function getCabinetFrontBorder(cabinet: Corpus) {
       <div class="mb-4"></div>
     {/if}
 
-    {#if !showSettings && !showSummary}
+    {#if !showSettings && !showSummary && !showHelp}
       <div class="mb-4 flex flex-wrap items-center justify-between gap-3 no-print">
         <div class="flex gap-3">
           <button on:click={openAddForm} class="px-4 py-2 bg-blue-600 text-white rounded">
@@ -648,6 +672,8 @@ function getCabinetFrontBorder(cabinet: Corpus) {
     <LayoutSummary on:close={() => showSummary = false} />
   {:else if showSettings}
     <SettingsPage on:close={() => showSettings = false} />
+  {:else if showHelp}
+    <HelpPage on:close={() => showHelp = false} />
   {:else}
     <div class="flex gap-2 mb-2">
       <button class="px-2 py-1 rounded border {view === 'top' ? 'bg-blue-500 text-white' : 'bg-white'}" on:click={() => viewChange('top')}>{$t('Top View')}</button>

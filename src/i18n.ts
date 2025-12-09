@@ -32,6 +32,40 @@ const translations: Record<Locale, Record<string, string>> = {
     'My project': 'Moj projekt',
     'Active project': 'Aktivni projekt',
     'Back to planner': 'Natrag u planer',
+    Help: 'Pomoć',
+    'Help & Instructions': 'Pomoć i upute',
+    'Learn how to set up a project, add cabinets, and export layout files and cut lists.':
+      'Nauči kako postaviti projekt, dodati elemente te izvesti tlocrte i liste rezova.',
+    'Using the planner': 'Korištenje planera',
+    'Add cabinets': 'Dodavanje elemenata',
+    'Export layouts & cut lists': 'Izvoz tlocrta i lista rezova',
+    'Start in Settings to enter your room size, materials, and pricing so costs are accurate.':
+      'Kreni u Postavkama i upiši dimenzije prostorije, materijale i cijene kako bi izračun bio točan.',
+    'Switch between Top, North Wall, and West Wall views and choose a plane for uppers to place cabinets on the correct wall.':
+      'Prebacuj se između pogleda Odozgo, Sjeverni zid i Zapadni zid te odaberi ravninu za gornje elemente kako bi ih smjestio na pravi zid.',
+    'Drag cabinets to move them, rotate from the Top view, and use the zoom buttons on the right to work at a comfortable scale.':
+      'Povuci elemente za pomicanje, rotiraj ih u pogledu odozgo i koristi tipke zumiranja desno za ugodnu razmjeru.',
+    'Use the Projects panel to save, rename, or back up layouts in this browser.':
+      'Panel Projekti služi za spremanje, preimenovanje ili sigurnosnu kopiju rasporeda u ovom pregledniku.',
+    'Click Add Cabinet in the toolbar.': 'Klikni Dodaj element u alatnoj traci.',
+    'Choose the cabinet type (Door, Drawer, Corner, or Oven) and enter width, height, and depth in centimeters.':
+      'Odaberi tip elementa (vrata, ladica, kutni ili pećnica) i upiši širinu, visinu i dubinu u centimetrima.',
+    'Set doors, drawers, shelves, and back style; enable handleless or gola options if needed.':
+      'Postavi vrata, ladice, police i tip leđa; uključi bezručke ili gola opcije po potrebi.',
+    'Pick the drawer system and add notes when relevant, then review the live spec card.':
+      'Odaberi sustav ladica i dodaj bilješke ako treba, zatim provjeri karticu sa specifikacijom.',
+    'Save changes to place the cabinet, then drag, rotate, or duplicate it to position it.':
+      'Spremi promjene kako bi postavio element, zatim ga povuci, rotiraj ili dupliciraj za pozicioniranje.',
+    'Open {page} from the planner toolbar when you are ready to export.':
+      'Otvori {page} iz alatne trake planera kada želiš izvesti podatke.',
+    'Pick the CSV format: General for a universal cut list or Max Moris for the shop-specific template.':
+      'Odaberi CSV format: General za univerzalnu listu rezova ili Max Moris za tvornički predložak.',
+    'Click Download CSV to export the cut list (millimeter dimensions with edge banding flags).':
+      'Klikni Preuzmi CSV za izvoz liste rezova (dimenzije u milimetrima s oznakama kantiranja).',
+    'Use Download Dado Drawings or Download Rabbet Drawings to export SVGs for panels that include those cuts.':
+      'Koristi Preuzmi crteže utora ili Preuzmi crteže ureza za SVG datoteke ploča koje imaju te obrade.',
+    'Use Print for a PDF-friendly drawing set, then Back to return to the planner.':
+      'Odaberi Ispis za skup crteža pogodan za PDF, a zatim Natrag za povratak u planer.',
     'Add Cabinet': 'Dodaj element',
     'Layout Summary': 'Sažetak tlocrta',
     Total: 'Ukupno',

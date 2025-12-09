@@ -22,10 +22,10 @@ export interface MaterialsState {
  * Global material configuration with default thickness values.
  */
 export const materials = writable<MaterialsState>({
-  corpus: { name: 'Corpus', thickness: 18, cost: 1 },
-  front: { name: 'Front', thickness: 18, cost: 1 },
-  back: { name: 'Back', thickness: 3, cost: 1 },
-  drawer: { name: 'Drawer', thickness: 16, cost: 1 },
-  edgeBandingCostPerMeter: 1,
-  cutCostPerMeter: 1
+  corpus: { name: 'Corpus', thickness: 18, cost: 18 },
+  front: { name: 'Front', thickness: 18, cost: 28 },
+  back: { name: 'Back', thickness: 3, cost: 6 },
+  drawer: { name: 'Drawer', thickness: 16, cost: 15 },
+  edgeBandingCostPerMeter: 0.5,
+  cutCostPerMeter: 0.4
 });

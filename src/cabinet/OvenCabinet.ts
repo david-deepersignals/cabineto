@@ -2,7 +2,7 @@ import { Corpus, type CorpusOptions, type Panel } from "./Corpus";
 import { get } from 'svelte/store';
 import { materials } from '../stores/materials';
 import { createDrawerPanels } from './drawerHelper';
-import {GOLA_PROFILE_WIDTH} from "./config";
+import { advancedSettings } from '../stores/advancedSettings';
 
 export class OvenCabinet extends Corpus {
     drawerHeight: number;
@@ -16,8 +16,8 @@ export class OvenCabinet extends Corpus {
         h: number,
         d: number,
         drawerSystem: "standard" | "metabox" | "vertex",
-        metaboxType: number = 400,
-        drawerSideHeight: number = 131,
+        metaboxType?: number,
+        drawerSideHeight?: number,
         options?: CorpusOptions,
         isUpper: boolean = false
     ) {
@@ -26,19 +26,23 @@ export class OvenCabinet extends Corpus {
         }
 
         super(id, w, h, d, 'oven', options, isUpper);
-        this.drawerHeight = h - (options?.hiddenHandles ? GOLA_PROFILE_WIDTH : 0) - 600;
-
+        const adv = get(advancedSettings);
+        const reveals = adv.reveals;
+        const defaults = adv.drawers.defaults;
+        this.drawerHeight = h - (options?.hiddenHandles ? reveals.golaProfileHeight : 0) - adv.oven.cavityHeight;
         this.drawerSystem = drawerSystem;
-        this.metaboxType = metaboxType;
-        this.drawerSideHeight = drawerSideHeight;
+        this.metaboxType = metaboxType ?? defaults.sliderLength;
+        this.drawerSideHeight = drawerSideHeight ?? defaults.railHeight;
     }
 
     validate(): boolean {
-        return this.w === 600 && this.d >= 560 && this.drawerHeight >= 140;
+        const oven = get(advancedSettings).oven;
+        return this.w === oven.requiredWidth && this.d >= oven.minDepth && this.drawerHeight >= oven.minDrawerHeight;
     }
 
     public panels(): Panel[] {
         const data = super.panels();
+        const adv = get(advancedSettings);
         const { corpus, back } = get(materials);
         const t = corpus.thickness;
         const corpusInnerWidth = this.w - 2 * t;
@@ -48,8 +52,8 @@ export class OvenCabinet extends Corpus {
             ...createDrawerPanels({
                 id: this.id,
                 index: 1,
-                faceHeight: this.drawerHeight - 2,
-                faceWidth: this.w - 4,
+                faceHeight: this.drawerHeight - adv.oven.faceHeightClearance,
+                faceWidth: this.w - adv.reveals.sideGap * 2,
                 drawerSystem: this.drawerSystem,
                 internalCorpusWidth: corpusInnerWidth,
                 internalCorpusDepth: corpusInnerDepth,

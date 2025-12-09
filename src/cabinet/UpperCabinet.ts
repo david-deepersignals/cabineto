@@ -1,6 +1,7 @@
 import {Corpus, type Panel} from "./Corpus";
 import { get } from 'svelte/store';
 import { materials } from '../stores/materials';
+import { advancedSettings, getCenterGap } from '../stores/advancedSettings';
 
 export class UpperCabinet extends Corpus{
     doors?: number;
@@ -26,9 +27,13 @@ export class UpperCabinet extends Corpus{
             return data;
         }
         const { front } = get(materials);
-        const totalReveal = (this.doors === 1) ? 4 : 6;
+        const reveals = get(advancedSettings).reveals;
+        const centerGap = getCenterGap(reveals);
+        const totalReveal = this.doors === 1
+            ? reveals.sideGap * 2
+            : reveals.sideGap * 2 + (this.doors - 1) * centerGap;
         const dw = (this.w - totalReveal) / this.doors;
-        const dh = this.h - 4;
+        const dh = this.h - reveals.verticalGap * 2;
         const hinge = dh > dw ? "2xDUZ" : "2xSIR";
         for (let i = 0; i < this.doors; i++) {
             data.push({

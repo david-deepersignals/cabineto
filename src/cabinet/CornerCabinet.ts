@@ -1,7 +1,7 @@
 import { Corpus, type CorpusOptions, type Panel } from "./Corpus";
 import { get } from 'svelte/store';
 import { materials } from '../stores/materials';
-import {HIDDEN_HANDEL_REVEAL} from "./config";
+import { advancedSettings } from '../stores/advancedSettings';
 
 export class CornerCabinet extends Corpus {
     fixedSide: number;
@@ -26,13 +26,14 @@ export class CornerCabinet extends Corpus {
     public panels(): Panel[] {
         const data = super.panels();
         const { front, corpus } = get(materials);
-        const doorWidth = this.w - this.fixedSide - 4;
-        let doorHeight = this.h - 4;
+        const reveals = get(advancedSettings).reveals;
+        const doorWidth = this.w - this.fixedSide - reveals.sideGap * 2;
+        let doorHeight = this.h - reveals.verticalGap * 2;
         if (this.options?.hiddenHandles) {
             if (this.isUpper) {
-                doorHeight += corpus.thickness + 2;
+                doorHeight += corpus.thickness + reveals.upperHandlelessOverhangExtra;
             } else {
-                doorHeight -= HIDDEN_HANDEL_REVEAL -  4;
+                doorHeight = this.h - reveals.hiddenHandleReveal;
             }
         }
 

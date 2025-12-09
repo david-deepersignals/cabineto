@@ -1,8 +1,8 @@
-import { BACK_INSET_OFFSET, Corpus, type CorpusOptions, type Panel, RABBET_DEPTH } from "./Corpus";
+import { Corpus, type CorpusOptions, type Panel } from "./Corpus";
 import { get } from 'svelte/store';
 import { materials } from '../stores/materials';
 import { createDrawerPanels } from './drawerHelper';
-import {HIDDEN_HANDEL_REVEAL} from "./config";
+import { advancedSettings } from '../stores/advancedSettings';
 
 export class DrawerCabinet extends Corpus{
     drawers?: number;
@@ -19,8 +19,8 @@ export class DrawerCabinet extends Corpus{
         drawers: number,
         heights: number[],
         drawerSystem: 'standard' | 'metabox' | 'vertex',
-        metaboxType: number = 400,
-        drawerSideHeight: number = 131,
+        metaboxType?: number,
+        drawerSideHeight?: number,
         options?: CorpusOptions,
         isUpper: boolean = false,
     ) {
@@ -28,8 +28,9 @@ export class DrawerCabinet extends Corpus{
         this.drawers = drawers;
         this.heights = heights;
         this.drawerSystem = drawerSystem;
-        this.metaboxType = metaboxType;
-        this.drawerSideHeight = drawerSideHeight;
+        const drawerDefaults = get(advancedSettings).drawers.defaults;
+        this.metaboxType = metaboxType ?? drawerDefaults.sliderLength;
+        this.drawerSideHeight = drawerSideHeight ?? drawerDefaults.railHeight;
     }
 
     validate(){
@@ -47,21 +48,23 @@ export class DrawerCabinet extends Corpus{
         if(this.drawers === undefined || this.heights === undefined) {
             return data;
         }
+        const adv = get(advancedSettings);
         const { corpus, back } = get(materials);
+        const reveals = adv.reveals;
         const t = corpus.thickness;
-        const usableHeight = this.h - (this.options?.hiddenHandles ? 0 : ((this.drawers + 1) * 2));
+        const usableHeight = this.h - (this.drawers + 1) * reveals.verticalGap;
         const corpusInnerWidth = this.w - 2 * t;
         const backReduction = this.options?.insetBack
-            ? BACK_INSET_OFFSET + back.thickness
+            ? adv.backs.insetOffset + back.thickness
             : this.options?.rabbetBack
-            ? RABBET_DEPTH
+            ? adv.backs.rabbetDepth
             : back.thickness;
         const corpusInnerDepth = this.d - backReduction;
         for (let i = 0; i < this.drawers; i++) {
             const pct = this.heights[i] / 100;
             let faceHeight = Math.round(pct * usableHeight);
             if (this.options?.hiddenHandles) {
-                faceHeight -= HIDDEN_HANDEL_REVEAL;
+                faceHeight -= reveals.hiddenHandleReveal;
             }
 
             data.push(
@@ -69,7 +72,7 @@ export class DrawerCabinet extends Corpus{
                     id: this.id,
                     index: i + 1,
                     faceHeight,
-                    faceWidth: this.w - 4,
+                    faceWidth: this.w - reveals.sideGap * 2,
                     drawerSystem: this.drawerSystem,
                     internalCorpusWidth: corpusInnerWidth,
                     internalCorpusDepth: corpusInnerDepth,

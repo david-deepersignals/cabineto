@@ -1,13 +1,21 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { BACK_INSET_OFFSET, Corpus, RABBET_DEPTH, RABBET_WIDTH } from '../src/cabinet/Corpus';
+import { Corpus } from '../src/cabinet/Corpus';
 import { DrawerCabinet } from '../src/cabinet/DrawerCabinet';
 import { DoorCabinet } from '../src/cabinet/DoorCabinet';
 import { UpperCabinet } from '../src/cabinet/UpperCabinet';
 import { CornerCabinet } from '../src/cabinet/CornerCabinet';
 import { OvenCabinet } from '../src/cabinet/OvenCabinet';
-import { createDrawerPanels, METABOX_DEPTH_CLEARANCE, METABOX_WIDTH_CLEARANCE } from '../src/cabinet/drawerHelper';
-import { HIDDEN_HANDEL_REVEAL } from '../src/cabinet/config';
+import { createDrawerPanels } from '../src/cabinet/drawerHelper';
+import { defaultAdvancedSettings } from '../src/stores/advancedSettings';
 import { findPanel, normalizePanels, resetMaterials } from './panelTestUtils';
+
+const ADV = defaultAdvancedSettings;
+const BACK_INSET_OFFSET = ADV.backs.insetOffset;
+const RABBET_WIDTH = ADV.backs.rabbetWidth;
+const RABBET_DEPTH = ADV.backs.rabbetDepth;
+const METABOX_WIDTH_CLEARANCE = ADV.drawers.metabox.widthClearance;
+const METABOX_DEPTH_CLEARANCE = ADV.drawers.metabox.depthClearance;
+const HIDDEN_HANDEL_REVEAL = ADV.reveals.hiddenHandleReveal;
 
 class TestCorpus extends Corpus {
   validate(): boolean {
@@ -469,7 +477,7 @@ describe('UpperCabinet panels', () => {
     doors.forEach((door) => {
       expect(door).toMatchObject({
         length: 356,
-        width: 347,
+        width: 346,
         hingeLocation: '2xDUZ',
         edgeBandingLengthRight: 1,
         edgeBandingLengthLeft: 1,
@@ -526,7 +534,7 @@ describe('OvenCabinet panels', () => {
     expect(drawerFace).toMatchObject({ length: 158, width: 596 });
 
     const drawerBottom = findPanel(panels, 'OV1-> Drawer 1 Bottom');
-    expect(drawerBottom).toMatchObject({ length: 533, width: 450 });
+    expect(drawerBottom).toMatchObject({ length: 533, width: 408 });
 
     expect(findPanel(panels, 'OV1-> Drawer 1 Back')).toMatchObject({ length: 533, width: 101, edgeBandingWidthTop: 1 });
 

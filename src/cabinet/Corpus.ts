@@ -1,10 +1,6 @@
 import { get } from 'svelte/store';
 import { materials } from '../stores/materials';
-
-export const BACK_INSET_OFFSET = 15;
-export const RABBET_WIDTH = 9;
-export const RABBET_DEPTH = 4;
-export const RABBET_CLEARANCE = 1;
+import { advancedSettings } from '../stores/advancedSettings';
 
 export interface CorpusOptions {
     full?: boolean;
@@ -70,10 +66,12 @@ export abstract class Corpus {
 
     public panels(): Panel[] {
         const { corpus, back } = get(materials);
+        const adv = get(advancedSettings);
+        const backs = adv.backs;
         const t = corpus.thickness;
         const data: Panel[] = [];
-        const dadoSpec: Dado = { offset: BACK_INSET_OFFSET, depth: 7, width: back.thickness + 1 };
-        const rabbetSpec: Rabbet = { edge: 'back', depth: RABBET_DEPTH, width: RABBET_WIDTH };
+        const dadoSpec: Dado = { offset: backs.insetOffset, depth: backs.insetDadoDepth, width: back.thickness + backs.insetDadoClearance };
+        const rabbetSpec: Rabbet = { edge: 'back', depth: backs.rabbetDepth, width: backs.rabbetWidth };
 
         const sidePanel: Panel = {
             length: this.h,
@@ -142,7 +140,7 @@ export abstract class Corpus {
 
             const topRear: Panel = {
                 length: this.w - 2 * t,
-                width: 100,
+                width: adv.construction.splitTopRailDepth,
                 quantity: 1,
                 edgeBandingLengthRight: 1,
                 edgeBandingLengthLeft: 0,
@@ -158,7 +156,7 @@ export abstract class Corpus {
 
             data.push({
                 length: this.w - 2 * t,
-                width: 100,
+                width: adv.construction.splitTopRailDepth,
                 quantity: 1,
                 edgeBandingLengthRight: 1,
                 edgeBandingLengthLeft: 1,
@@ -178,9 +176,9 @@ export abstract class Corpus {
         if (this.options?.insetBack) {
             //If it is a full cabinet than make it 6 mm oversize as dado is 7mm deep
             //If not make it 1 thickness + 5 mm oversize
-            const height = this.options?.full ? this.h - (2 * t) + 12 : (this.h - t) + 5;
+            const height = this.options?.full ? this.h - (2 * t) + backs.insetOversizeFull : (this.h - t) + backs.insetOversizePartial;
             data.push({
-                length: this.w - (2 * t) + 12,
+                length: this.w - (2 * t) + backs.insetOversizeFull,
                 width: height,
                 quantity: 1,
                 edgeBandingLengthRight: 0,
@@ -193,7 +191,7 @@ export abstract class Corpus {
                 materialThickness: back.thickness,
             });
         } else if (this.options?.rabbetBack) {
-            const engage = RABBET_WIDTH - RABBET_CLEARANCE; // back extends 6 mm into a 7 mm rabbet (1 mm play)
+            const engage = backs.rabbetWidth - backs.rabbetClearance; // back extends 6 mm into a 7 mm rabbet (1 mm play)
             data.push({
                 length: this.w - (t * 2) + (engage * 2),
                 width: this.h - (t * 2) + (engage * 2),

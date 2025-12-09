@@ -1,8 +1,10 @@
+import { get } from 'svelte/store';
 import type { Corpus } from '../cabinet/Corpus';
 import { DoorCabinet } from '../cabinet/DoorCabinet';
 import { DrawerCabinet } from '../cabinet/DrawerCabinet';
 import { CornerCabinet } from '../cabinet/CornerCabinet';
 import { OvenCabinet } from '../cabinet/OvenCabinet';
+import { advancedSettings } from '../stores/advancedSettings';
 
 /**
  * Convert cabinet instances into plain objects so they can be stored.
@@ -15,6 +17,8 @@ export function serializeCabinets(cabinets: Corpus[]): any[] {
  * Recreate cabinet instances from stored data.
  */
 export function reviveCabinet(raw: any): Corpus {
+  const defaults = get(advancedSettings);
+  const drawerDefaults = defaults.drawers.defaults;
   let cab: Corpus;
   switch (raw?.type) {
     case 'drawer':
@@ -26,8 +30,8 @@ export function reviveCabinet(raw: any): Corpus {
         raw.drawers,
         raw.heights ?? [],
         raw.drawerSystem ?? 'standard',
-        raw.metaboxType ?? 400,
-        raw.drawerSideHeight ?? 131,
+        raw.metaboxType ?? drawerDefaults.sliderLength,
+        raw.drawerSideHeight ?? drawerDefaults.railHeight,
         raw.options,
         raw.isUpper
       );
@@ -50,8 +54,8 @@ export function reviveCabinet(raw: any): Corpus {
         raw.h,
         raw.d,
         raw.drawerSystem ?? 'standard',
-        raw.metaboxType ?? 400,
-        raw.drawerSideHeight ?? 131,
+        raw.metaboxType ?? drawerDefaults.sliderLength,
+        raw.drawerSideHeight ?? drawerDefaults.railHeight,
         raw.options,
         raw.isUpper
       );

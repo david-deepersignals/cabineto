@@ -1,13 +1,7 @@
 import type { Panel } from "./Corpus";
 import { get } from "svelte/store";
 import { materials } from "../stores/materials";
-
-export const METABOX_WIDTH_CLEARANCE = 31; // total clearance in mm
-export const METABOX_DEPTH_CLEARANCE = 42; // depth reduction in mm
-export const SLIDER_LENGHTS = [270, 320, 350, 400, 450, 500, 550];
-export const RAIL_HEIGHTS = [93, 131, 178];
-
-
+import { advancedSettings, buildRailHeightMap } from "../stores/advancedSettings";
 
 interface DrawerParams {
     id: string;
@@ -23,12 +17,17 @@ interface DrawerParams {
 
 export function createDrawerPanels(p: DrawerParams): Panel[] {
     const { corpus, back, front, drawer } = get(materials);
+    const drawerSettings = get(advancedSettings).drawers;
     const panels: Panel[] = [];
-    const railHeightMapping: Record<number, number> = {
-        93: 63,
-        131: 101,
-        178: 148,
-    };
+    const railHeightMapping = buildRailHeightMap(drawerSettings.railHeights);
+    const fallbackRailHeight = drawerSettings.defaults.railHeight ?? drawerSettings.railHeights[0]?.rail ?? 0;
+    const selectedRailHeight = p.railHeight ?? fallbackRailHeight;
+    const backHeight =
+        railHeightMapping[selectedRailHeight] ??
+        railHeightMapping[fallbackRailHeight] ??
+        selectedRailHeight;
+    const fallbackSliderLength = p.internalCorpusDepth - drawerSettings.metabox.defaultFrontSetback;
+    const sliderLength = p.sliderLenght ?? fallbackSliderLength;
 
     panels.push({
         length: p.faceHeight,
@@ -48,8 +47,8 @@ export function createDrawerPanels(p: DrawerParams): Panel[] {
     if (p.drawerSystem === "vertex") {
         //BOTTOM
         panels.push({
-            length: p.internalCorpusWidth - 19,
-            width: (p.sliderLenght ?? 0) - 10,
+            length: p.internalCorpusWidth - drawerSettings.vertex.widthClearance,
+            width: sliderLength - drawerSettings.vertex.depthShorten,
             quantity: 1,
             edgeBandingLengthRight: 0,
             edgeBandingLengthLeft: 0,
@@ -64,8 +63,8 @@ export function createDrawerPanels(p: DrawerParams): Panel[] {
 
         //BACK
         panels.push({
-            length: p.internalCorpusWidth - 42,
-            width: railHeightMapping[p.railHeight ?? 131],
+            length: p.internalCorpusWidth - drawerSettings.vertex.backWidthClearance,
+            width: backHeight,
             quantity: 1,
             edgeBandingLengthRight: 0,
             edgeBandingLengthLeft: 0,
@@ -80,8 +79,8 @@ export function createDrawerPanels(p: DrawerParams): Panel[] {
     }else if (p.drawerSystem === "metabox") {
     //BOTTOM
         panels.push({
-            length: p.internalCorpusWidth - METABOX_WIDTH_CLEARANCE,
-            width: p.sliderLenght ?? (p.internalCorpusDepth - 30) - METABOX_DEPTH_CLEARANCE,
+            length: p.internalCorpusWidth - drawerSettings.metabox.widthClearance,
+            width: sliderLength - drawerSettings.metabox.depthClearance,
             quantity: 1,
             edgeBandingLengthRight: 0,
             edgeBandingLengthLeft: 0,
@@ -96,8 +95,8 @@ export function createDrawerPanels(p: DrawerParams): Panel[] {
 
         //BACK
         panels.push({
-            length: p.internalCorpusWidth - METABOX_WIDTH_CLEARANCE,
-            width: railHeightMapping[p.railHeight ?? 131],
+            length: p.internalCorpusWidth - drawerSettings.metabox.widthClearance,
+            width: backHeight,
             quantity: 1,
             edgeBandingLengthRight: 0,
             edgeBandingLengthLeft: 0,
@@ -110,11 +109,13 @@ export function createDrawerPanels(p: DrawerParams): Panel[] {
         });
     }else {
 
-        const sliderClearance = 24
+        const sliderClearance = drawerSettings.standard.sideClearanceTotal;
+        const bottomDepthClearance = drawerSettings.standard.bottomDepthClearance;
+        const sideHeightReduction = drawerSettings.standard.sideHeightReduction;
         //BOTTOM
         panels.push({
             length: p.internalCorpusWidth - sliderClearance, // 24 is the slider clearance for both sides needs to be a param
-            width: p.internalCorpusDepth - 20,
+            width: p.internalCorpusDepth - bottomDepthClearance,
             quantity: 1,
             edgeBandingLengthRight: 0,
             edgeBandingLengthLeft: 0,
@@ -128,8 +129,8 @@ export function createDrawerPanels(p: DrawerParams): Panel[] {
 
         //SIDES
         panels.push({
-            length: p.faceHeight - 30,
-            width: p.internalCorpusDepth -20,
+            length: p.faceHeight - sideHeightReduction,
+            width: p.internalCorpusDepth - bottomDepthClearance,
             quantity: 2,
             edgeBandingLengthRight: 1,
             edgeBandingLengthLeft: 0,
@@ -144,7 +145,7 @@ export function createDrawerPanels(p: DrawerParams): Panel[] {
         //BACK
         panels.push({
             length: p.internalCorpusWidth - sliderClearance - (2*drawer.thickness),
-            width: p.faceHeight - 30,
+            width: p.faceHeight - sideHeightReduction,
             quantity: 1,
             edgeBandingLengthRight: 0,
             edgeBandingLengthLeft: 0,

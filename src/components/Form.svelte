@@ -6,7 +6,7 @@
     import {CornerCabinet} from "../cabinet/CornerCabinet";
     import {OvenCabinet} from "../cabinet/OvenCabinet";
     import { cabinets } from '../stores/cabinets';
-    import { SLIDER_LENGHTS, RAIL_HEIGHTS } from "../cabinet/drawerHelper";
+    import { advancedSettings } from '../stores/advancedSettings';
     import { t } from '../i18n';
 
     const dispatch = createEventDispatcher();
@@ -23,8 +23,8 @@
     let drawers = 3;
     let drawerHeights = '30,30,40';
     let drawerSystem: 'standard' | 'metabox' | 'vertex' = 'standard';
-    let metaboxType = '400';
-    let drawerSideHeight = '131';
+    let metaboxType = '';
+    let drawerSideHeight = '';
     let fixedSide = '0';
     let fullCorpus = false;
     let insetBack = false;
@@ -35,6 +35,8 @@
     let y = 0
     let z = 0
     let rotation = '0';
+    let sliderLengthOptions: number[] = [];
+    let railHeightOptions: number[] = [];
 
     onMount(() => {
         if (cabinet) initFromCabinet();
@@ -90,6 +92,14 @@
     $: isOven = type === 'oven';
     $: isUpperAllowed = isDoor || isCorner;
     $: if (!isUpperAllowed || !hiddenHandles) isUpperCabinet = false;
+    $: sliderLengthOptions = $advancedSettings.drawers.sliderLengths;
+    $: railHeightOptions = $advancedSettings.drawers.railHeights.map(r => r.rail);
+    $: if (!cabinet && !metaboxType) {
+        metaboxType = String($advancedSettings.drawers.defaults.sliderLength);
+    }
+    $: if (!cabinet && !drawerSideHeight) {
+        drawerSideHeight = String($advancedSettings.drawers.defaults.railHeight);
+    }
     const toMm = (value: string) => {
         const n = parseFloat(value);
         return Number.isFinite(n) ? n * 10 : 0;
@@ -162,6 +172,8 @@
             x = x + w + 20;
         }
         const id = existingCabinet ? existingCabinet.id : `CAB-${$cabinets.length + 1}`;
+        const parsedSliderLength = parseInt(metaboxType) || $advancedSettings.drawers.defaults.sliderLength;
+        const parsedRailHeight = parseInt(drawerSideHeight) || $advancedSettings.drawers.defaults.railHeight;
 
 
         let newCabinet;
@@ -190,8 +202,8 @@
                     .map(s => parseFloat(s.trim()))
                     .filter(v => !isNaN(v)),
                 drawerSystem,
-                parseInt(metaboxType),
-                parseInt(drawerSideHeight),
+                parsedSliderLength,
+                parsedRailHeight,
                 {full:fullCorpus,
                     insetBack:insetBack,
                     rabbetBack:rabbetBack,
@@ -220,8 +232,8 @@
                 h * 10,
                 d * 10,
                 drawerSystem,
-                parseInt(metaboxType),
-                parseInt(drawerSideHeight),
+                parsedSliderLength,
+                parsedRailHeight,
                 {full:fullCorpus, insetBack:insetBack, rabbetBack:rabbetBack, hiddenHandles:hiddenHandles},
                 false,
             );
@@ -448,7 +460,7 @@
             <label class="space-y-1 text-sm font-medium text-gray-700">
               {$t('Slide length')}
               <select bind:value={metaboxType} class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
-                {#each SLIDER_LENGHTS as t}
+                {#each sliderLengthOptions as t}
                   <option value={String(t)}>{t} mm</option>
                 {/each}
               </select>
@@ -456,7 +468,7 @@
             <label class="space-y-1 text-sm font-medium text-gray-700">
               {$t('Railing height')}
               <select bind:value={drawerSideHeight} class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
-                {#each RAIL_HEIGHTS as h}
+                {#each railHeightOptions as h}
                   <option value={String(h)}>{h} mm</option>
                 {/each}
               </select>

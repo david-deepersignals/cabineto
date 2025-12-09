@@ -26,7 +26,7 @@
 
   const exportSteps: HelpStep[] = [
     { key: 'Open {page} from the planner toolbar when you are ready to export.', varKey: 'Layout Summary' },
-    { key: 'Pick the CSV format: General for a universal cut list or Max Moris for the shop-specific template.' },
+    { key: 'Pick the CSV format: General for a universal cut list, Max Moris for the shop-specific template, or Iverpan for their order sheet.' },
     { key: 'Click Download CSV to export the cut list (millimeter dimensions with edge banding flags).' },
     { key: 'Use Download Dado Drawings or Download Rabbet Drawings to export SVGs for panels that include those cuts.' },
     { key: 'Use Print for a PDF-friendly drawing set, then Back to return to the planner.' }

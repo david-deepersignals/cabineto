@@ -40,7 +40,7 @@ const fitToBox = (width: number, height: number, maxWidth: number, maxHeight: nu
 interface Bounds { minX: number; minY: number; width: number; height: number; }
 interface HeightSegment { start: number; end: number; mid: number; size: number; }
 
-let csvType: 'general' | 'max' = 'general';
+let csvType: 'general' | 'max' | 'iverpan' = 'general';
 
 let iso: { cabs: any[]; bounds: Bounds } = { cabs: [], bounds: { minX: 0, minY: 0, width: 0, height: 0 } };
 let isoBaseW = 0;
@@ -236,7 +236,12 @@ const svgWidth = (b: Bounds) => b.width + MARGIN + DIM_OFFSET * 5;
 const svgHeight = (b: Bounds) => b.height + MARGIN + DIM_OFFSET * 5;
 
 function downloadCSV() {
-  const csv = csvType === 'general' ? csvGeneral() : csvMaxMoris();
+  const csv =
+    csvType === 'max'
+      ? csvMaxMoris()
+      : csvType === 'iverpan'
+      ? csvIverpan()
+      : csvGeneral();
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -516,6 +521,10 @@ async function downloadRabbetDrawings() {
   URL.revokeObjectURL(url);
 }
 
+function formatIverpanNumber(value: number) {
+  return value.toFixed(2).replace('.', ',');
+}
+
 function csvGeneral() {
   let csv = "length (mm),width (mm),quantity,edge banding length right,edge banding length left,edge banding width bottom,edge banding width top,label,hinge location,dado/rabbet,material name,material thickness\n";
 
@@ -583,12 +592,77 @@ function csvMaxMoris() {
 
   return csv;
 }
+
+function csvIverpan() {
+  const delimiter = ";";
+  const header = [
+    'R.b',
+    'Šifra materijala',
+    'Deb.',
+    '1.Mjera',
+    '2. Mjera',
+    'Br.',
+    'R.P. kantiranje desno',
+    'R.P. kantiranje lijevo',
+    'R.P. kantiranje dolje',
+    'R.P. kantiranje gore',
+    'Napomena',
+    'Napomena',
+    'Napomena',
+    'Napomena',
+    'Napomena'
+  ];
+
+  let csv = header.join(delimiter) + "\n";
+
+  let index = 1;
+  $cabinets.forEach(cab => {
+    cab.panels().forEach((p: Panel) => {
+      const [cabinetId, partName] = p.label.includes("->")
+        ? p.label.split("->").map(part => part.trim())
+        : ["", p.label];
+      const dadoNotes =
+        p.dados?.map(d => `dado ${formatIverpanNumber(d.offset)}/${formatIverpanNumber(d.depth)}/${formatIverpanNumber(d.width)}`) ?? [];
+      const rabbetNotes =
+        p.rabbets?.map(r => `rabbet ${formatIverpanNumber(r.width)}/${formatIverpanNumber(r.depth)}`) ?? [];
+      const joinery = [...dadoNotes, ...rabbetNotes].join('; ');
+
+      // Napomena columns: [part name, cabinet id, hinge, extra, joinery (last)]
+      const notes = [
+        partName || p.label,
+        cabinetId,
+        p.hingeLocation,
+        '',
+        joinery
+      ];
+
+      csv += [
+        index,
+        p.material,
+        formatIverpanNumber(p.materialThickness),
+        formatIverpanNumber(p.length),
+        formatIverpanNumber(p.width),
+        p.quantity,
+        p.edgeBandingLengthRight ? '1' : '',
+        p.edgeBandingLengthLeft ? '1' : '',
+        p.edgeBandingWidthBottom ? '1' : '',
+        p.edgeBandingWidthTop ? '1' : '',
+        ...notes.slice(0, 5)
+      ].join(delimiter) + "\n";
+
+      index++;
+    });
+  });
+
+  return csv;
+}
 </script>
 
 <div class="mb-4 flex gap-2 items-center no-print">
   <select bind:value={csvType} class="border p-2">
     <option value="general">{$t('General')}</option>
     <option value="max">Max Moris</option>
+    <option value="iverpan">Iverpan</option>
   </select>
   <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={downloadCSV}>{$t('Download CSV')}</button>
   <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={downloadDadoDrawings}>{$t('Download Dado Drawings')}</button>

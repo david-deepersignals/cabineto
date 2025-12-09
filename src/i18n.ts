@@ -58,8 +58,8 @@ const translations: Record<Locale, Record<string, string>> = {
       'Spremi promjene kako bi postavio element, zatim ga povuci, rotiraj ili dupliciraj za pozicioniranje.',
     'Open {page} from the planner toolbar when you are ready to export.':
       'Otvori {page} iz alatne trake planera kada želiš izvesti podatke.',
-    'Pick the CSV format: General for a universal cut list or Max Moris for the shop-specific template.':
-      'Odaberi CSV format: General za univerzalnu listu rezova ili Max Moris za tvornički predložak.',
+    'Pick the CSV format: General for a universal cut list, Max Moris for the shop-specific template, or Iverpan for their order sheet.':
+      'Odaberi CSV format: General za univerzalnu listu rezova, Max Moris za tvornički predložak ili Iverpan za njihov narudžbenički obrazac.',
     'Click Download CSV to export the cut list (millimeter dimensions with edge banding flags).':
       'Klikni Preuzmi CSV za izvoz liste rezova (dimenzije u milimetrima s oznakama kantiranja).',
     'Use Download Dado Drawings or Download Rabbet Drawings to export SVGs for panels that include those cuts.':

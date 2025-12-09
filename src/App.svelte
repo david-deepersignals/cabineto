@@ -11,6 +11,7 @@ import { materials } from './stores/materials';
 import { projects } from './stores/projects';
 import { summarizeCosts } from './utils/cost';
 import type { Corpus } from './cabinet/Corpus';
+import { t, locale, locales } from './i18n';
 
 const GRID_SIZE = 1;
 let layoutWidthMm = 1000;
@@ -557,9 +558,9 @@ function getCabinetFrontBorder(cabinet: Corpus) {
           </svg>
         </div>
         <div>
-          <p class="text-xs uppercase tracking-wide text-gray-500">Visual Cabinet</p>
+          <p class="text-xs uppercase tracking-wide text-gray-500">{$t('Visual Cabinet')}</p>
           <div class="flex items-center gap-2">
-            <h1 class="text-xl font-semibold text-gray-900">Planner</h1>
+            <h1 class="text-xl font-semibold text-gray-900">{$t('Planner')}</h1>
             <button
               class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-800 shadow-sm hover:bg-slate-200"
               on:click={() => showProjects = true}
@@ -567,13 +568,23 @@ function getCabinetFrontBorder(cabinet: Corpus) {
               <svg class="h-3.5 w-3.5 text-slate-700" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
                 <path d="M3 5.5a1.5 1.5 0 0 1 1.5-1.5h3l1 1H15A1.5 1.5 0 0 1 16.5 6v8.5A1.5 1.5 0 0 1 15 16H4.5A1.5 1.5 0 0 1 3 14.5v-9Z" />
               </svg>
-              <span class="truncate max-w-[140px]">{activeProject?.name ?? 'My project'}</span>
+              <span class="truncate max-w-[140px]">{activeProject?.name ?? $t('My project')}</span>
             </button>
           </div>
         </div>
       </div>
       <div class="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
         <div class="flex items-center gap-2">
+          <label class="sr-only" for="locale-select">{$t('Language')}</label>
+          <select
+            id="locale-select"
+            bind:value={$locale}
+            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm hover:border-slate-300"
+          >
+            {#each locales as opt}
+              <option value={opt.code}>{opt.label}</option>
+            {/each}
+          </select>
           <button
             class="inline-flex items-center gap-2 rounded-lg border border-blue-100 px-3 py-2 text-sm text-gray-800 bg-white hover:bg-blue-50 shadow-sm"
             on:click={openSettings}
@@ -582,7 +593,7 @@ function getCabinetFrontBorder(cabinet: Corpus) {
               <path d="M9.5 2.5h1l.6 2.1a5.8 5.8 0 0 1 1.6.9l2-.7.7 1.2-1.3 1.6c.1.3.1.6.1.9s0 .6-.1.9l1.3 1.6-.7 1.2-2-.7a5.8 5.8 0 0 1-1.6.9l-.6 2.1h-1l-.6-2.1a5.8 5.8 0 0 1-1.6-.9l-2 .7-.7-1.2 1.3-1.6a4 4 0 0 1-.1-.9c0-.3 0-.6.1-.9l-1.3-1.6.7-1.2 2 .7c.5-.4 1-.7 1.6-.9l.6-2.1Z" />
               <circle cx="10" cy="10" r="2.5" />
             </svg>
-            Settings
+            {$t('Settings')}
           </button>
         </div>
         <button
@@ -595,8 +606,8 @@ function getCabinetFrontBorder(cabinet: Corpus) {
             </svg>
           </div>
           <div class="text-left leading-tight">
-            <p class="text-[10px] uppercase tracking-wide text-slate-200">Project</p>
-            <p class="text-sm font-semibold">{activeProject?.name ?? 'My project'}</p>
+            <p class="text-[10px] uppercase tracking-wide text-slate-200">{$t('Project')}</p>
+            <p class="text-sm font-semibold">{activeProject?.name ?? $t('My project')}</p>
           </div>
         </button>
       </div>
@@ -607,7 +618,7 @@ function getCabinetFrontBorder(cabinet: Corpus) {
           class="px-4 py-2 rounded border text-gray-700 bg-white shadow-sm inline-flex items-center gap-2"
           on:click={() => showSettings = false}
         >
-          ← Back to planner
+          ← {$t('Back to planner')}
         </button>
       </div>
     {:else}
@@ -618,17 +629,17 @@ function getCabinetFrontBorder(cabinet: Corpus) {
       <div class="mb-4 flex flex-wrap items-center justify-between gap-3 no-print">
         <div class="flex gap-3">
           <button on:click={openAddForm} class="px-4 py-2 bg-blue-600 text-white rounded">
-            Add Cabinet
+            {$t('Add Cabinet')}
           </button>
           <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => showSummary = true}>
-            Layout Summary
+            {$t('Layout Summary')}
           </button>
         </div>
         <button
           class="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800 shadow-sm hover:bg-blue-100"
           on:click={() => showCostPanel = !showCostPanel}
         >
-          Total: ${costSummary.total.toFixed(2)}
+          {$t('Total')}: ${costSummary.total.toFixed(2)}
         </button>
       </div>
     {/if}
@@ -639,16 +650,16 @@ function getCabinetFrontBorder(cabinet: Corpus) {
     <SettingsPage on:close={() => showSettings = false} />
   {:else}
     <div class="flex gap-2 mb-2">
-      <button class="px-2 py-1 rounded border {view === 'top' ? 'bg-blue-500 text-white' : 'bg-white'}" on:click={() => viewChange('top')}>Top View</button>
-      <button class="px-2 py-1 rounded border {view === 'front' ? 'bg-blue-500 text-white' : 'bg-white'}" on:click={() => viewChange('front')}>North Wall</button>
-      <button class="px-2 py-1 rounded border {view === 'side' ? 'bg-blue-500 text-white' : 'bg-white'}" on:click={() => viewChange('side')}>West Wall</button>
+      <button class="px-2 py-1 rounded border {view === 'top' ? 'bg-blue-500 text-white' : 'bg-white'}" on:click={() => viewChange('top')}>{$t('Top View')}</button>
+      <button class="px-2 py-1 rounded border {view === 'front' ? 'bg-blue-500 text-white' : 'bg-white'}" on:click={() => viewChange('front')}>{$t('North Wall')}</button>
+      <button class="px-2 py-1 rounded border {view === 'side' ? 'bg-blue-500 text-white' : 'bg-white'}" on:click={() => viewChange('side')}>{$t('West Wall')}</button>
     </div>
     {#if view === 'top' && planeOptions.length > 1}
       <div class="mb-4">
-        <label>Plane:
+        <label>{$t('Plane')}:
           <select bind:value={plane} on:change={() => viewChange('top')}  class="border p-1">
             {#each planeOptions as p}
-              <option value={p}>{p === 0 ? 'Base cabinets' : `Upper cabinets (${p} mm)`}</option>
+              <option value={p}>{p === 0 ? $t('Base cabinets') : $t('Upper cabinets ({height} mm)', { height: p })}</option>
             {/each}
           </select>
         </label>
@@ -658,12 +669,12 @@ function getCabinetFrontBorder(cabinet: Corpus) {
     <div class="layout-container relative" style="width: {layoutWidth}px; height: {layoutHeight}px;">
       <div id="layout" bind:this={layout} style="width: {layoutWidth}px; height: {layoutHeight}px;">
         {#if view === 'top'}
-          <div class="wall-label north">North</div>
-          <div class="wall-label west">West</div>
+          <div class="wall-label north">{$t('North')}</div>
+          <div class="wall-label west">{$t('West')}</div>
         {:else if view === 'front'}
-          <div class="wall-label center">North Wall</div>
+          <div class="wall-label center">{$t('North Wall')}</div>
         {:else}
-          <div class="wall-label center">West Wall</div>
+          <div class="wall-label center">{$t('West Wall')}</div>
         {/if}
         {#each $cabinets as cabinet, index}
           <div
@@ -680,29 +691,29 @@ function getCabinetFrontBorder(cabinet: Corpus) {
               <button on:click|stopPropagation={() => openEditForm(cabinet)}>✎</button>
               <button on:click|stopPropagation={() => deleteCabinet(cabinet.id)}>✕</button>
             </div>
-            {`Cabinet ${cabinet.id}`}<br/>
-            W:{cabinet.w} H:{cabinet.h} D:{cabinet.d}
+            {$t('Cabinet {id}', { id: cabinet.id })}<br/>
+            {$t('W')}:{cabinet.w} {$t('H')}:{cabinet.h} {$t('D')}:{cabinet.d}
             {#if cabinet.type === 'door'}
-              <br/>🚪 {(cabinet as any).doors} door(s)
+              <br/>🚪 {$t('{count} door(s)', { count: (cabinet as any).doors })}
               {#if (cabinet as any).shelves && (cabinet as any).shelves > 0}
-                <br/>🗂️ {(cabinet as any).shelves} shelf/shelves
+                <br/>🗂️ {$t('{count} shelf/shelves', { count: (cabinet as any).shelves })}
               {/if}
             {/if}
             {#if cabinet.type === 'drawer'}
-              <br/>🗄️ {(cabinet as any).drawers} drawer(s)<br>{(cabinet as any).heights.join("% / ")}
+              <br/>🗄️ {$t('{count} drawer(s)', { count: (cabinet as any).drawers })}<br>{(cabinet as any).heights.join("% / ")}
             {/if}
             {#if cabinet.type === 'corner'}
-              <br/>🔻 corner {(cabinet as any).fixedSide}mm fixed
+              <br/>🔻 {$t('corner {fixed}mm fixed', { fixed: (cabinet as any).fixedSide })}
             {/if}
             {#if cabinet.type === 'oven'}
-              <br/>🔥 oven with drawer
+              <br/>🔥 {$t('oven with drawer')}
             {/if}
           </div>
         {/each}
         {#if view !== 'top'}
           {#each planeOptions as p}
             <div class="plane-line {p === plane ? 'active' : ''}" style="bottom: {p / $scale}px;">
-              <span>{p === 0 ? 'Base' : `${p} mm`}</span>
+              <span>{p === 0 ? $t('Base') : `${p} mm`}</span>
             </div>
           {/each}
         {/if}

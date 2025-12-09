@@ -3,6 +3,7 @@ import { createEventDispatcher } from 'svelte';
 import { cabinets } from '../stores/cabinets';
 import type { Corpus } from '../cabinet/Corpus';
 import { reviveCabinet, serializeCabinets } from '../utils/persistence';
+import { t, translateInstant } from '../i18n';
 
 const dispatch = createEventDispatcher();
 
@@ -24,13 +25,13 @@ function uploadJSON(event: Event) {
   const reader = new FileReader();
   reader.onload = () => {
     try {
-      const data = JSON.parse(reader.result as string);
-      const restored: Corpus[] = Array.isArray(data) ? data.map(reviveCabinet) : [];
-      cabinets.set(restored);
-      dispatch('close');
-    } catch (e) {
-      alert('Invalid JSON file');
-    }
+    const data = JSON.parse(reader.result as string);
+    const restored: Corpus[] = Array.isArray(data) ? data.map(reviveCabinet) : [];
+    cabinets.set(restored);
+    dispatch('close');
+  } catch (e) {
+      alert(translateInstant('Invalid JSON file'));
+  }
   };
   reader.readAsText(file);
 }
@@ -38,15 +39,15 @@ function uploadJSON(event: Event) {
 
 <div class="fixed inset-0 z-10 flex items-center justify-center bg-black bg-opacity-50">
   <div class="bg-white p-6 rounded shadow-md w-full max-w-sm">
-    <h3 class="text-lg font-semibold mb-4">Backups</h3>
+    <h3 class="text-lg font-semibold mb-4">{$t('Backups')}</h3>
     <div class="space-y-4">
-      <button class="px-4 py-2 bg-green-600 text-white rounded w-full" on:click={downloadJSON}>Download JSON</button>
+      <button class="px-4 py-2 bg-green-600 text-white rounded w-full" on:click={downloadJSON}>{$t('Download JSON')}</button>
       <div>
-        <label class="block mb-2" for="backup-upload">Upload JSON</label>
+        <label class="block mb-2" for="backup-upload">{$t('Upload JSON')}</label>
         <input id="backup-upload" type="file" accept="application/json" on:change={uploadJSON} class="border p-1 w-full" />
       </div>
       <div class="flex justify-end">
-        <button class="px-3 py-1 bg-gray-400 text-white rounded" on:click={() => dispatch('close')}>Close</button>
+        <button class="px-3 py-1 bg-gray-400 text-white rounded" on:click={() => dispatch('close')}>{$t('Close')}</button>
       </div>
     </div>
   </div>

@@ -2,6 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import { materials } from '../stores/materials';
   import { room } from '../stores/room';
+  import { t } from '../i18n';
 
   const dispatch = createEventDispatcher();
 
@@ -72,56 +73,54 @@
 <div class="min-h-screen bg-gray-50 px-4 py-6 sm:px-6 lg:px-10">
   <div class="mx-auto flex max-w-6xl flex-col gap-6">
     <div class="flex flex-col gap-2">
-      <h3 class="text-2xl font-semibold">Project Settings</h3>
+      <h3 class="text-2xl font-semibold">{$t('Project Settings')}</h3>
       <p class="text-sm text-gray-600">
-        Tune the room envelope and the materials you are pricing against. Grouped sections keep the difference
-        between cabinet box, fronts, backs, and drawers clear.
+        {$t('Tune the room envelope and the materials you are pricing against. Grouped sections keep the difference between cabinet box, fronts, backs, and drawers clear.')}
       </p>
     </div>
 
     <section class="rounded-lg border bg-white p-5 shadow">
       <div class="mb-4 flex items-start justify-between gap-4">
         <div>
-          <h4 class="text-lg font-semibold">Room envelope</h4>
+          <h4 class="text-lg font-semibold">{$t('Room envelope')}</h4>
           <p class="text-sm text-gray-600">
-            Define the overall footprint you are designing for. Values are stored in centimeters for quick edits
-            and converted back to millimeters for calculations.
+            {$t('Define the overall footprint you are designing for. Values are stored in centimeters for quick edits and converted back to millimeters for calculations.')}
           </p>
         </div>
         <span class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-700">cm</span>
       </div>
       <div class="grid gap-4 md:grid-cols-3">
         <label class="space-y-1 text-sm font-medium text-gray-700">
-          Width
+          {$t('Width')}
           <input
             class="w-full rounded border px-3 py-2 text-sm"
             type="number"
             min="0"
             step="1"
             bind:value={roomWidth}
-            placeholder="e.g. 400"
+            placeholder={$t('e.g. 400')}
           />
         </label>
         <label class="space-y-1 text-sm font-medium text-gray-700">
-          Depth
+          {$t('Depth')}
           <input
             class="w-full rounded border px-3 py-2 text-sm"
             type="number"
             min="0"
             step="1"
             bind:value={roomDepth}
-            placeholder="e.g. 300"
+            placeholder={$t('e.g. 300')}
           />
         </label>
         <label class="space-y-1 text-sm font-medium text-gray-700">
-          Height
+          {$t('Height')}
           <input
             class="w-full rounded border px-3 py-2 text-sm"
             type="number"
             min="0"
             step="1"
             bind:value={roomHeight}
-            placeholder="e.g. 250"
+            placeholder={$t('e.g. 250')}
           />
         </label>
       </div>
@@ -130,10 +129,9 @@
     <section class="rounded-lg border bg-white p-5 shadow space-y-4">
       <div class="flex items-start justify-between gap-4">
         <div>
-          <h4 class="text-lg font-semibold">Panel materials</h4>
+          <h4 class="text-lg font-semibold">{$t('Panel materials')}</h4>
           <p class="text-sm text-gray-600">
-            Name and size the components that make up your cabinets. Keep the display name friendly while the
-            thickness drives cut lists and clearances.
+            {$t('Name and size the components that make up your cabinets. Keep the display name friendly while the thickness drives cut lists and clearances.')}
           </p>
         </div>
         <span class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-700">mm</span>
@@ -141,16 +139,16 @@
       <div class="grid gap-4 md:grid-cols-2">
         <div class="rounded border bg-slate-50 p-4 shadow-inner">
           <div class="mb-2">
-            <h5 class="font-semibold">Cabinet box (corpus)</h5>
-            <p class="text-sm text-gray-600">Side panels, bottoms, and tops for the carcass.</p>
+            <h5 class="font-semibold">{$t('Cabinet box (corpus)')}</h5>
+            <p class="text-sm text-gray-600">{$t('Side panels, bottoms, and tops for the carcass.')}</p>
           </div>
           <div class="grid gap-3 sm:grid-cols-2">
             <label class="space-y-1 text-sm font-medium text-gray-700">
-              Display name
+              {$t('Display name')}
               <input class="w-full rounded border px-3 py-2 text-sm" type="text" bind:value={corpusName} />
             </label>
             <label class="space-y-1 text-sm font-medium text-gray-700">
-              Panel thickness
+              {$t('Panel thickness')}
               <input
                 class="w-full rounded border px-3 py-2 text-sm"
                 type="number"
@@ -160,7 +158,7 @@
               />
             </label>
             <label class="space-y-1 text-sm font-medium text-gray-700 sm:col-span-2">
-              Material cost (per m²)
+              {$t('Material cost (per m²)')}
               <input
                 class="w-full rounded border px-3 py-2 text-sm"
                 type="number"
@@ -174,16 +172,16 @@
 
         <div class="rounded border bg-slate-50 p-4 shadow-inner">
           <div class="mb-2">
-            <h5 class="font-semibold">Fronts</h5>
-            <p class="text-sm text-gray-600">Doors or drawer fronts visible to the user.</p>
+            <h5 class="font-semibold">{$t('Fronts')}</h5>
+            <p class="text-sm text-gray-600">{$t('Doors or drawer fronts visible to the user.')}</p>
           </div>
           <div class="grid gap-3 sm:grid-cols-2">
             <label class="space-y-1 text-sm font-medium text-gray-700">
-              Display name
+              {$t('Display name')}
               <input class="w-full rounded border px-3 py-2 text-sm" type="text" bind:value={frontName} />
             </label>
             <label class="space-y-1 text-sm font-medium text-gray-700">
-              Panel thickness
+              {$t('Panel thickness')}
               <input
                 class="w-full rounded border px-3 py-2 text-sm"
                 type="number"
@@ -193,7 +191,7 @@
               />
             </label>
             <label class="space-y-1 text-sm font-medium text-gray-700 sm:col-span-2">
-              Material cost (per m²)
+              {$t('Material cost (per m²)')}
               <input
                 class="w-full rounded border px-3 py-2 text-sm"
                 type="number"
@@ -207,16 +205,16 @@
 
         <div class="rounded border bg-slate-50 p-4 shadow-inner">
           <div class="mb-2">
-            <h5 class="font-semibold">Backs</h5>
-            <p class="text-sm text-gray-600">Thin panels for cabinet backs or drawer bottoms.</p>
+            <h5 class="font-semibold">{$t('Backs')}</h5>
+            <p class="text-sm text-gray-600">{$t('Thin panels for cabinet backs or drawer bottoms.')}</p>
           </div>
           <div class="grid gap-3 sm:grid-cols-2">
             <label class="space-y-1 text-sm font-medium text-gray-700">
-              Display name
+              {$t('Display name')}
               <input class="w-full rounded border px-3 py-2 text-sm" type="text" bind:value={backName} />
             </label>
             <label class="space-y-1 text-sm font-medium text-gray-700">
-              Panel thickness
+              {$t('Panel thickness')}
               <input
                 class="w-full rounded border px-3 py-2 text-sm"
                 type="number"
@@ -226,7 +224,7 @@
               />
             </label>
             <label class="space-y-1 text-sm font-medium text-gray-700 sm:col-span-2">
-              Material cost (per m²)
+              {$t('Material cost (per m²)')}
               <input
                 class="w-full rounded border px-3 py-2 text-sm"
                 type="number"
@@ -240,16 +238,16 @@
 
         <div class="rounded border bg-slate-50 p-4 shadow-inner">
           <div class="mb-2">
-            <h5 class="font-semibold">Drawer boxes</h5>
-            <p class="text-sm text-gray-600">Sides and fronts that make up drawer internals.</p>
+            <h5 class="font-semibold">{$t('Drawer boxes')}</h5>
+            <p class="text-sm text-gray-600">{$t('Sides and fronts that make up drawer internals.')}</p>
           </div>
           <div class="grid gap-3 sm:grid-cols-2">
             <label class="space-y-1 text-sm font-medium text-gray-700">
-              Display name
+              {$t('Display name')}
               <input class="w-full rounded border px-3 py-2 text-sm" type="text" bind:value={drawerName} />
             </label>
             <label class="space-y-1 text-sm font-medium text-gray-700">
-              Panel thickness
+              {$t('Panel thickness')}
               <input
                 class="w-full rounded border px-3 py-2 text-sm"
                 type="number"
@@ -259,7 +257,7 @@
               />
             </label>
             <label class="space-y-1 text-sm font-medium text-gray-700 sm:col-span-2">
-              Material cost (per m²)
+              {$t('Material cost (per m²)')}
               <input
                 class="w-full rounded border px-3 py-2 text-sm"
                 type="number"
@@ -275,14 +273,14 @@
 
     <section class="rounded-lg border bg-white p-5 shadow">
       <div class="mb-3">
-        <h4 class="text-lg font-semibold">Edge & fabrication costs</h4>
+        <h4 class="text-lg font-semibold">{$t('Edge & fabrication costs')}</h4>
         <p class="text-sm text-gray-600">
-          Capture per-meter operations so pricing reflects edge banding and cutting labor.
+          {$t('Capture per-meter operations so pricing reflects edge banding and cutting labor.')}
         </p>
       </div>
       <div class="grid gap-4 md:grid-cols-2">
         <label class="space-y-1 text-sm font-medium text-gray-700">
-          Edge banding (per m)
+          {$t('Edge banding (per m)')}
           <input
             class="w-full rounded border px-3 py-2 text-sm"
             type="number"
@@ -292,7 +290,7 @@
           />
         </label>
         <label class="space-y-1 text-sm font-medium text-gray-700">
-          Cutting (per m)
+          {$t('Cutting (per m)')}
           <input
             class="w-full rounded border px-3 py-2 text-sm"
             type="number"
@@ -306,9 +304,9 @@
 
     <div class="rounded-lg border bg-white p-4 shadow flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <p class="text-sm text-gray-600">
-        Save to immediately apply dimensions and rates to cabinet calculations.
+        {$t('Save to immediately apply dimensions and rates to cabinet calculations.')}
       </p>
-      <button class="px-4 py-2 rounded bg-blue-600 text-white shadow-sm" on:click={save}>Save changes</button>
+      <button class="px-4 py-2 rounded bg-blue-600 text-white shadow-sm" on:click={save}>{$t('Save changes')}</button>
     </div>
   </div>
 </div>

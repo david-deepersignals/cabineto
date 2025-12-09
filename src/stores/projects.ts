@@ -4,6 +4,7 @@ import { materials, type MaterialsState } from './materials';
 import { room, type Room } from './room';
 import { scale } from './scale';
 import { reviveCabinets, serializeCabinets } from '../utils/persistence';
+import { translateInstant } from '../i18n';
 
 type SerializedCabinet = ReturnType<typeof serializeCabinets>[number];
 
@@ -46,7 +47,7 @@ const normalizeProject = (raw: any): ProjectRecord => {
   const data = raw?.data ?? {};
   return {
     id: raw?.id ?? createId(),
-    name: typeof raw?.name === 'string' && raw.name.trim() ? raw.name.trim() : 'Untitled project',
+    name: typeof raw?.name === 'string' && raw.name.trim() ? raw.name.trim() : translateInstant('Untitled project'),
     updatedAt: typeof raw?.updatedAt === 'number' ? raw.updatedAt : Date.now(),
     data: {
       cabinets: Array.isArray(data.cabinets) ? data.cabinets : [],
@@ -60,7 +61,7 @@ const normalizeProject = (raw: any): ProjectRecord => {
 const buildInitialState = (): ProjectsState => {
   const fallback: ProjectRecord = {
     id: createId(),
-    name: 'My project',
+    name: translateInstant('My project'),
     updatedAt: Date.now(),
     data: captureSnapshot()
   };
@@ -182,7 +183,7 @@ function createProjectsStore() {
       const snapshot = copyLayout ? base : { ...base, cabinets: [] };
       const project: ProjectRecord = {
         id: createId(),
-        name: name?.trim() || 'Untitled project',
+        name: name?.trim() || translateInstant('Untitled project'),
         updatedAt: Date.now(),
         data: snapshot
       };

@@ -7,6 +7,7 @@
     import {OvenCabinet} from "../cabinet/OvenCabinet";
     import { cabinets } from '../stores/cabinets';
     import { SLIDER_LENGHTS, RAIL_HEIGHTS } from "../cabinet/drawerHelper";
+    import { t } from '../i18n';
 
     const dispatch = createEventDispatcher();
 
@@ -146,12 +147,12 @@
         const h = parseFloat(height);
         const d = parseFloat(depth);
         if (!w || !h || !d) {
-            alert('All dimensions (width, height, depth) must be filled.');
+            alert($t('All dimensions (width, height, depth) must be filled.'));
             return;
         }
 
         if (insetBack && rabbetBack) {
-            alert('Please choose either inset back or rabbet back, not both.');
+            alert($t('Please choose either inset back or rabbet back, not both.'));
             return;
         }
 
@@ -200,7 +201,7 @@
         } else if (type === "corner") {
             const fs = parseFloat(fixedSide);
             if (!fs) {
-                alert('Fixed side dimension must be provided.');
+                alert($t('Fixed side dimension must be provided.'));
                 return;
             }
             newCabinet = new CornerCabinet(
@@ -247,42 +248,42 @@
   <div class="w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl">
     <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <p class="text-xs uppercase tracking-wide text-gray-500">{cabinet ? 'Edit' : 'Add'} cabinet</p>
-        <h3 class="text-2xl font-semibold text-gray-900">Cabinet details</h3>
-        <p class="text-sm text-gray-600">Size, configure, and preview your cabinet before placing it in the layout.</p>
+        <p class="text-xs uppercase tracking-wide text-gray-500">{cabinet ? $t('Edit cabinet') : $t('Add cabinet')}</p>
+        <h3 class="text-2xl font-semibold text-gray-900">{$t('Cabinet details')}</h3>
+        <p class="text-sm text-gray-600">{$t('Size, configure, and preview your cabinet before placing it in the layout.')}</p>
       </div>
       <div class="flex gap-2">
-        <button class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" on:click={() => dispatch('close')}>Cancel</button>
-        <button class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700" on:click={saveCabinet}>{cabinet ? 'Save changes' : 'Add cabinet'}</button>
+        <button class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" on:click={() => dispatch('close')}>{$t('Cancel')}</button>
+        <button class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700" on:click={saveCabinet}>{cabinet ? $t('Save changes') : $t('Add cabinet')}</button>
       </div>
     </div>
 
     <div class="mt-4 grid gap-4 lg:grid-cols-3">
       <div class="rounded-xl border border-slate-100 bg-slate-50 p-4 shadow-inner lg:col-span-2">
         <div class="mb-3 flex items-center justify-between">
-          <h4 class="text-sm font-semibold text-gray-800">Sizing & placement</h4>
+          <h4 class="text-sm font-semibold text-gray-800">{$t('Sizing & placement')}</h4>
           {#if cabinet}
             <label class="flex items-center gap-2 text-xs font-semibold text-gray-700">
               <input type="checkbox" bind:checked={createDuplicate} class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-              Duplicate on save
+              {$t('Duplicate on save')}
             </label>
           {/if}
         </div>
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <label class="space-y-1 text-sm font-medium text-gray-700">
-            Width (cm)
+            {$t('Width (cm)')}
             <input type="number" bind:value={width} class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none" required />
           </label>
           <label class="space-y-1 text-sm font-medium text-gray-700">
-            Height (cm)
+            {$t('Height (cm)')}
             <input type="number" bind:value={height} class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none" required />
           </label>
           <label class="space-y-1 text-sm font-medium text-gray-700">
-            Depth (cm)
+            {$t('Depth (cm)')}
             <input type="number" bind:value={depth} class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none" required />
           </label>
           <label class="space-y-1 text-sm font-medium text-gray-700">
-            Rotation
+            {$t('Rotation')}
             <select bind:value={rotation} class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
               <option value="0">0°</option>
               <option value="90">90°</option>
@@ -294,25 +295,25 @@
         <div class="mt-4 rounded-xl border border-dashed border-slate-200 bg-white/70 p-4 shadow-inner">
           <div class="flex items-start justify-between gap-3">
             <div>
-              <p class="text-xs uppercase tracking-wide text-gray-500">Live spec</p>
+              <p class="text-xs uppercase tracking-wide text-gray-500">{$t('Live spec')}</p>
               <p class="text-lg font-semibold text-gray-900">{Math.round(widthMm)} × {Math.round(heightMm)} × {Math.round(depthMm)} mm</p>
-              <p class="text-xs text-gray-600">Volume {volumeLiters} L • Footprint {footprint} m²</p>
+              <p class="text-xs text-gray-600">{$t('Volume {volume} L • Footprint {footprint} m²', { volume: volumeLiters, footprint })}</p>
             </div>
             <div class="flex flex-col gap-1 text-xs text-gray-700 min-w-[140px]">
               <div class="flex items-center gap-2">
-                <span class="w-8 text-right text-gray-500">W</span>
+                <span class="w-8 text-right text-gray-500">{$t('W')}</span>
                 <div class="h-2 w-28 rounded-full bg-slate-100">
                   <div class="h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500" style={`width:${Math.min(100, (widthMm / 3000) * 100)}%`}></div>
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <span class="w-8 text-right text-gray-500">H</span>
+                <span class="w-8 text-right text-gray-500">{$t('H')}</span>
                 <div class="h-2 w-28 rounded-full bg-slate-100">
                   <div class="h-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500" style={`width:${Math.min(100, (heightMm / 3000) * 100)}%`}></div>
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <span class="w-8 text-right text-gray-500">D</span>
+                <span class="w-8 text-right text-gray-500">{$t('D')}</span>
                 <div class="h-2 w-28 rounded-full bg-slate-100">
                   <div class="h-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500" style={`width:${Math.min(100, (depthMm / 2000) * 100)}%`}></div>
                 </div>
@@ -320,7 +321,7 @@
             </div>
           </div>
           <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-600">Mini preview</p>
+            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-600">{$t('Mini preview')}</p>
             <svg viewBox={`0 0 ${svgW} ${svgH}`} class="h-40 w-full" aria-label="Isometric preview">
               <defs>
                 <linearGradient id="cab-top" x1="0" y1="0" x2="1" y2="1">
@@ -340,41 +341,41 @@
               <polygon points={preview.left} fill="url(#cab-side)" stroke="#475569" stroke-width="1" stroke-linejoin="round" />
               <polygon points={preview.right} fill="url(#cab-front)" stroke="#475569" stroke-width="1" stroke-linejoin="round" />
               <line x1={preview.frontEdge[0].x} y1={preview.frontEdge[0].y} x2={preview.frontEdge[1].x} y2={preview.frontEdge[1].y} stroke="#1e293b" stroke-dasharray="3 3" />
-              <text x="8" y="18" class="fill-gray-600 text-[10px] font-semibold">Top / Isometric</text>
+              <text x="8" y="18" class="fill-gray-600 text-[10px] font-semibold">{$t('Top / Isometric')}</text>
             </svg>
           </div>
         </div>
       </div>
 
       <div class="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-        <h4 class="text-sm font-semibold text-gray-800 mb-3">Construction options</h4>
+        <h4 class="text-sm font-semibold text-gray-800 mb-3">{$t('Construction options')}</h4>
         <div class="space-y-3">
           <label class="flex items-start gap-3 rounded-lg border border-gray-200 bg-slate-50 px-3 py-2 shadow-inner">
             <input type="checkbox" bind:checked={fullCorpus} class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
             <div>
-              <p class="text-sm font-semibold text-gray-800">Full corpus</p>
-              <p class="text-xs text-gray-600">Add a full top panel instead of split planks.</p>
+              <p class="text-sm font-semibold text-gray-800">{$t('Full corpus')}</p>
+              <p class="text-xs text-gray-600">{$t('Add a full top panel instead of split planks.')}</p>
             </div>
           </label>
           <label class="flex items-start gap-3 rounded-lg border border-gray-200 bg-slate-50 px-3 py-2 shadow-inner">
             <input type="checkbox" bind:checked={insetBack} on:change={handleInsetBackChange} class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
             <div>
-              <p class="text-sm font-semibold text-gray-800">Inset back</p>
-              <p class="text-xs text-gray-600">Cuts dados to drop the back inside the sides. Cannot combine with rabbet back.</p>
+              <p class="text-sm font-semibold text-gray-800">{$t('Inset back')}</p>
+              <p class="text-xs text-gray-600">{$t('Cuts dados to drop the back inside the sides. Cannot combine with rabbet back.')}</p>
             </div>
           </label>
           <label class="flex items-start gap-3 rounded-lg border border-gray-200 bg-slate-50 px-3 py-2 shadow-inner">
             <input type="checkbox" bind:checked={rabbetBack} on:change={handleRabbetBackChange} class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
             <div>
-              <p class="text-sm font-semibold text-gray-800">Rabbet back</p>
-              <p class="text-xs text-gray-600">Rabbets the rear edge for the back panel. Mutually exclusive with inset back.</p>
+              <p class="text-sm font-semibold text-gray-800">{$t('Rabbet back')}</p>
+              <p class="text-xs text-gray-600">{$t('Rabbets the rear edge for the back panel. Mutually exclusive with inset back.')}</p>
             </div>
           </label>
           <label class="flex items-start gap-3 rounded-lg border border-gray-200 bg-slate-50 px-3 py-2 shadow-inner">
             <input type="checkbox" bind:checked={hiddenHandles} class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
             <div>
-              <p class="text-sm font-semibold text-gray-800">Hidden handles</p>
-              <p class="text-xs text-gray-600">Use handleless fronts for a clean look.</p>
+              <p class="text-sm font-semibold text-gray-800">{$t('Hidden handles')}</p>
+              <p class="text-xs text-gray-600">{$t('Use handleless fronts for a clean look.')}</p>
               {#if isUpperAllowed}
                 <label class="mt-2 flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-700 shadow-sm">
                   <input
@@ -383,7 +384,7 @@
                     disabled={!hiddenHandles}
                     class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
                   />
-                  <span class="text-[12px]">Create door overhang for upper cabinets</span>
+                  <span class="text-[12px]">{$t('Create door overhang for upper cabinets')}</span>
                 </label>
               {/if}
             </div>
@@ -394,58 +395,58 @@
 
     <div class="mt-4 grid gap-4 lg:grid-cols-3">
       <div class="rounded-xl border border-slate-100 bg-white p-4 shadow-sm lg:col-span-2">
-        <h4 class="text-sm font-semibold text-gray-800 mb-3">Cabinet type</h4>
+        <h4 class="text-sm font-semibold text-gray-800 mb-3">{$t('Cabinet type')}</h4>
         <div class="grid gap-3 md:grid-cols-2">
           <label class="space-y-1 text-sm font-medium text-gray-700">
-            Type
+            {$t('Type')}
             <select bind:value={type} class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
-              <option value="door">Door</option>
-              <option value="drawer">Drawer</option>
-              <option value="corner">Corner</option>
-              <option value="oven">Oven</option>
+              <option value="door">{$t('Door')}</option>
+              <option value="drawer">{$t('Drawer')}</option>
+              <option value="corner">{$t('Corner')}</option>
+              <option value="oven">{$t('Oven')}</option>
             </select>
           </label>
           {#if isDoor}
             <label class="space-y-1 text-sm font-medium text-gray-700">
-              Doors
+              {$t('Doors')}
               <input type="number" bind:value={doors} class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none" />
             </label>
           {/if}
           {#if isDoor}
             <label class="space-y-1 text-sm font-medium text-gray-700">
-              Shelves
+              {$t('Shelves')}
               <input type="number" bind:value={shelves} min="0" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none" />
             </label>
           {/if}
           {#if isCorner}
             <label class="space-y-1 text-sm font-medium text-gray-700">
-              Fixed side (cm)
+              {$t('Fixed side (cm)')}
               <input type="number" bind:value={fixedSide} class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none" />
             </label>
           {/if}
           {#if isDrawer}
             <label class="space-y-1 text-sm font-medium text-gray-700">
-              Drawers
+              {$t('Drawers')}
               <input type="number" bind:value={drawers} class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none" />
             </label>
             <label class="space-y-1 text-sm font-medium text-gray-700">
-              Heights (comma-separated %)
+              {$t('Heights (comma-separated %)')}
               <input type="text" bind:value={drawerHeights} class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none" />
             </label>
           {/if}
           {#if isDrawer || isOven}
             <label class="space-y-1 text-sm font-medium text-gray-700">
-              Drawer system
+              {$t('Drawer system')}
               <select bind:value={drawerSystem} class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
-                <option value="standard">Wooden</option>
-                <option value="metabox">Metabox</option>
-                <option value="vertex">Vertex</option>
+                <option value="standard">{$t('Wooden')}</option>
+                <option value="metabox">{$t('Metabox')}</option>
+                <option value="vertex">{$t('Vertex')}</option>
               </select>
             </label>
           {/if}
           {#if (isDrawer || isOven) && (drawerSystem === 'metabox' || drawerSystem === 'vertex')}
             <label class="space-y-1 text-sm font-medium text-gray-700">
-              Slide length
+              {$t('Slide length')}
               <select bind:value={metaboxType} class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
                 {#each SLIDER_LENGHTS as t}
                   <option value={String(t)}>{t} mm</option>
@@ -453,7 +454,7 @@
               </select>
             </label>
             <label class="space-y-1 text-sm font-medium text-gray-700">
-              Railing height
+              {$t('Railing height')}
               <select bind:value={drawerSideHeight} class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
                 {#each RAIL_HEIGHTS as h}
                   <option value={String(h)}>{h} mm</option>
@@ -465,12 +466,12 @@
       </div>
 
       <div class="rounded-xl border border-slate-100 bg-slate-50 p-4 shadow-inner">
-        <h4 class="text-sm font-semibold text-gray-800 mb-3">Notes</h4>
+        <h4 class="text-sm font-semibold text-gray-800 mb-3">{$t('Notes')}</h4>
         <ul class="space-y-2 text-sm text-gray-700">
-          <li>• Inset back and rabbet back are mutually exclusive; choosing one will disable the other.</li>
-          <li>• If no back option is selected, the back will be cut from the corpus material.</li>
-          <li>• Dimensions are entered in centimeters for convenience.</li>
-          <li>• Duplicate lets you save and place a copy offset to the side.</li>
+          <li>• {$t('Inset back and rabbet back are mutually exclusive; choosing one will disable the other.')}</li>
+          <li>• {$t('If no back option is selected, the back will be cut from the corpus material.')}</li>
+          <li>• {$t('Dimensions are entered in centimeters for convenience.')}</li>
+          <li>• {$t('Duplicate lets you save and place a copy offset to the side.')}</li>
         </ul>
       </div>
     </div>

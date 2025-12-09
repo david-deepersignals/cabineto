@@ -5,6 +5,7 @@ import { scale } from '../stores/scale';
 import { projects } from '../stores/projects';
 import type { Panel } from '../cabinet/Corpus';
 import JSZip from 'jszip';
+import { t, translateInstant } from '../i18n';
 
 const dispatch = createEventDispatcher();
 
@@ -48,7 +49,7 @@ let isoDisplay = { width: 0, height: 0 };
 let viewportHeight = 900;
 let viewportWidth = 1200;
 let isoRotate = false;
-let activeProjectName = 'Project';
+let activeProjectName = translateInstant('Project');
 
 $: iso = prepareIso();
 $: {
@@ -68,7 +69,7 @@ onMount(() => {
   updateSize();
   const unsubscribe = projects.subscribe(p => {
     const found = p.projects.find(pr => pr.id === p.activeId);
-    activeProjectName = found?.name || 'Project';
+    activeProjectName = found?.name || translateInstant('Project');
   });
   window.addEventListener('resize', updateSize);
   return () => {
@@ -503,7 +504,7 @@ async function downloadRabbetDrawings() {
     });
   });
   if (index === 1) {
-    alert('No rabbet panels found.');
+    alert(translateInstant('No rabbet panels found.'));
     return;
   }
   const content = await zip.generateAsync({ type: 'blob' });
@@ -586,28 +587,28 @@ function csvMaxMoris() {
 
 <div class="mb-4 flex gap-2 items-center no-print">
   <select bind:value={csvType} class="border p-2">
-    <option value="general">General</option>
+    <option value="general">{$t('General')}</option>
     <option value="max">Max Moris</option>
   </select>
-  <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={downloadCSV}>Download CSV</button>
-  <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={downloadDadoDrawings}>Download Dado Drawings</button>
-  <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={downloadRabbetDrawings}>Download Rabbet Drawings</button>
-  <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => window.print()}>Print</button>
-  <button class="px-4 py-2 bg-blue-600 text-white rounded" on:click={() => dispatch('close')}>Back</button>
+  <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={downloadCSV}>{$t('Download CSV')}</button>
+  <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={downloadDadoDrawings}>{$t('Download Dado Drawings')}</button>
+  <button class="px-4 py-2 bg-green-600 text-white rounded" on:click={downloadRabbetDrawings}>{$t('Download Rabbet Drawings')}</button>
+  <button class="px-4 py-2 bg-gray-600 text-white rounded" on:click={() => window.print()}>{$t('Print')}</button>
+  <button class="px-4 py-2 bg-blue-600 text-white rounded" on:click={() => dispatch('close')}>{$t('Back')}</button>
 </div>
 
 <div class="summary-section print-page project-header">
   <div class="project-title">{activeProjectName}</div>
-  <div class="project-subtitle">Cabinet layout summary</div>
+  <div class="project-subtitle">{$t('Cabinet layout summary')}</div>
 </div>
 
 <div class="summary-section print-page">
 <div class="summary-header flex items-center justify-between">
-  <h3 class={`font-semibold mb-2 ${isoRotate ? 'rotate-heading' : ''}`}>3D View</h3>
+  <h3 class={`font-semibold mb-2 ${isoRotate ? 'rotate-heading' : ''}`}>{$t('3D View')}</h3>
   <p class={`text-sm text-gray-700 ${isoRotate ? 'rotate-label' : ''}`}>
-    Total width: {totalWidthMm(iso.bounds)} mm · Total height: {totalHeightMm(iso.bounds)} mm
+    {$t('Total width: {width} mm · Total height: {height} mm', { width: totalWidthMm(iso.bounds), height: totalHeightMm(iso.bounds) })}
     {#if isoRotate}
-      <span class="ml-2 text-xs text-gray-500">(Rotated for print)</span>
+      <span class="ml-2 text-xs text-gray-500">({$t('Rotated for print')})</span>
     {/if}
   </p>
 </div>
@@ -785,11 +786,11 @@ function csvMaxMoris() {
   {@const rotateWide = v.id === 'north' ? true : baseW > baseH}
   <div class="summary-section print-page">
     <div class="summary-header flex items-center justify-between">
-      <h3 class={`font-semibold mb-2 ${rotateWide ? 'rotate-heading' : ''}`}>{v.label}</h3>
+      <h3 class={`font-semibold mb-2 ${rotateWide ? 'rotate-heading' : ''}`}>{$t(v.label)}</h3>
       <p class={`text-sm text-gray-700 ${rotateWide ? 'rotate-label' : ''}`}>
-        Total width: {totalWidthMm(data.bounds)} mm · Total height: {totalHeightMm(data.bounds)} mm
+        {$t('Total width: {width} mm · Total height: {height} mm', { width: totalWidthMm(data.bounds), height: totalHeightMm(data.bounds) })}
         {#if rotateWide}
-          <span class="ml-2 text-xs text-gray-500">(Rotated for print)</span>
+          <span class="ml-2 text-xs text-gray-500">({$t('Rotated for print')})</span>
         {/if}
       </p>
     </div>
@@ -879,7 +880,7 @@ function csvMaxMoris() {
       <line x1={x + w} y1={data.bounds.height + MARGIN + DIM_OFFSET - 5} x2={x + w} y2={data.bounds.height + MARGIN + DIM_OFFSET + 5} stroke="black" />
       <text x={x + w / 2} y={data.bounds.height + MARGIN + DIM_OFFSET + 15} text-anchor="middle" font-size="12">{Math.round(widthMm)} mm</text>
     {/each}
-    <text x={data.bounds.width / 2 + MARGIN} y={data.bounds.height + MARGIN + DIM_OFFSET + 35} text-anchor="middle" font-size="12">Total {totalWidthMm(data.bounds)} mm</text>
+    <text x={data.bounds.width / 2 + MARGIN} y={data.bounds.height + MARGIN + DIM_OFFSET + 35} text-anchor="middle" font-size="12">{$t('Total {width} mm', { width: totalWidthMm(data.bounds) })}</text>
 
     <!-- total height dimension line -->
     <line x1={data.bounds.width + MARGIN + DIM_OFFSET} y1={MARGIN} x2={data.bounds.width + MARGIN + DIM_OFFSET} y2={data.bounds.height + MARGIN} stroke="black" />
@@ -893,7 +894,7 @@ function csvMaxMoris() {
   </div>
 {/each}
 
-<h3 class="font-semibold mb-2">Cabinet Drawings</h3>
+<h3 class="font-semibold mb-2">{$t('Cabinet Drawings')}</h3>
 <div class="summary-section summary-grid print-page">
   {#each $cabinets as cab}
     {@const dims = getOrientedDims(cab)}
@@ -951,7 +952,17 @@ function csvMaxMoris() {
     <div class="border p-3 flex flex-col gap-3 summary-card">
       <div class="flex items-center justify-between w-full">
         <div class="text-base font-semibold text-gray-900">{cab.id}</div>
-        <div class="text-sm text-gray-700 capitalize">{cab.type}</div>
+        <div class="text-sm text-gray-700 capitalize">
+          {#if cab.type === 'door'}
+            {$t('Door')}
+          {:else if cab.type === 'drawer'}
+            {$t('Drawer')}
+          {:else if cab.type === 'corner'}
+            {$t('Corner')}
+          {:else}
+            {$t('Oven')}
+          {/if}
+        </div>
       </div>
       <div class="summary-body">
         <div class="summary-iso">
@@ -989,27 +1000,27 @@ function csvMaxMoris() {
 
               {#if cab.type === 'door' && (cab as any).doors}
                 {@const doorCount = (cab as any).doors}
-                <text x={midX} y={p5.y - 40} text-anchor="middle" font-size="10">Doors: {doorCount}</text>
+                <text x={midX} y={p5.y - 40} text-anchor="middle" font-size="10">{$t('Doors')}: {doorCount}</text>
               {/if}
 
               {#if cab.type === 'drawer' && (cab as any).drawers}
                 {@const drawerCount = (cab as any).drawers}
-                <text x={midX} y={p5.y - 20} text-anchor="middle" font-size="10">Drawers: {drawerCount}</text>
+                <text x={midX} y={p5.y - 20} text-anchor="middle" font-size="10">{$t('Drawers')}: {drawerCount}</text>
               {/if}
 
               {#if cab.type === 'drawer' && (cab as any).clearance}
                 {@const clearance = (cab as any).clearance}
-                <text x={midX} y={p5.y + 20} text-anchor="middle" font-size="10">Clearance: {clearance} mm</text>
+                <text x={midX} y={p5.y + 20} text-anchor="middle" font-size="10">{$t('Clearance')}: {clearance} mm</text>
               {/if}
 
               {#if cab.type === 'oven' && (cab as any).drawerHeight}
                 {@const drawerHeight = (cab as any).drawerHeight}
-                <text x={midX} y={p5.y + 40} text-anchor="middle" font-size="10">Drawer Height: {drawerHeight} mm</text>
+                <text x={midX} y={p5.y + 40} text-anchor="middle" font-size="10">{$t('Drawer Height')}: {drawerHeight} mm</text>
               {/if}
 
               {#if cab.type === 'corner' && (cab as any).fixedSide}
                 {@const fixedSide = (cab as any).fixedSide}
-                <text x={midX} y={p5.y + 60} text-anchor="middle" font-size="10">Fixed Side: {fixedSide} mm</text>
+                <text x={midX} y={p5.y + 60} text-anchor="middle" font-size="10">{$t('Fixed Side')}: {fixedSide} mm</text>
               {/if}
               
               
@@ -1019,30 +1030,30 @@ function csvMaxMoris() {
         </div>
         <div class="text-sm mt-2 w-full summary-meta">
           <div class="grid grid-cols-2 gap-2 text-gray-800">
-            <span class="font-semibold">Width</span><span class="font-semibold">{Math.round(cab.w)} mm</span>
-            <span class="font-semibold">Height</span><span class="font-semibold">{Math.round(cab.h)} mm</span>
-            <span class="font-semibold">Depth</span><span class="font-semibold">{Math.round(cab.d)} mm</span>
+            <span class="font-semibold">{$t('WidthLabel')}</span><span class="font-semibold">{Math.round(cab.w)} mm</span>
+            <span class="font-semibold">{$t('HeightLabel')}</span><span class="font-semibold">{Math.round(cab.h)} mm</span>
+            <span class="font-semibold">{$t('DepthLabel')}</span><span class="font-semibold">{Math.round(cab.d)} mm</span>
             {#if cab.type === 'door'}
-              <span class="font-semibold text-gray-800">Doors</span><span>{(cab as any).doors}</span>
+              <span class="font-semibold text-gray-800">{$t('Doors')}</span><span>{(cab as any).doors}</span>
             {/if}
             {#if cab.type === 'drawer'}
-              <span class="font-semibold text-gray-800">Drawers</span><span>{(cab as any).drawers}</span>
+              <span class="font-semibold text-gray-800">{$t('Drawers')}</span><span>{(cab as any).drawers}</span>
               {#if (cab as any).clearance}
-                <span class="font-semibold text-gray-800">Clearance</span><span>{(cab as any).clearance} mm</span>
+                <span class="font-semibold text-gray-800">{$t('Clearance')}</span><span>{(cab as any).clearance} mm</span>
               {/if}
             {/if}
             {#if cab.type === 'oven'}
-              <span class="font-semibold text-gray-800">Drawer Height</span><span>{(cab as any).drawerHeight} mm</span>
+              <span class="font-semibold text-gray-800">{$t('Drawer Height')}</span><span>{(cab as any).drawerHeight} mm</span>
             {/if}
             {#if cab.type === 'corner' && (cab as any).fixedSide}
-              <span class="font-semibold text-gray-800">Fixed Side</span><span>{(cab as any).fixedSide} mm</span>
+              <span class="font-semibold text-gray-800">{$t('Fixed Side')}</span><span>{(cab as any).fixedSide} mm</span>
             {/if}
           </div>
         </div>
       </div>
       {#if joineryPanels.length}
         <div class="joinery-section">
-          <div class="joinery-title">Dados & Rabbets</div>
+          <div class="joinery-title">{$t('Dados & Rabbets')}</div>
           <div class="joinery-grid">
             {#each joineryPanels as panel, i}
               {@const dadoUri = panel.dados?.length ? svgToDataUri(panelDadoSvg(panel, i + 1)) : ''}
@@ -1050,7 +1061,7 @@ function csvMaxMoris() {
               <div class="joinery-card">
                 <div class="joinery-meta">
                   <span>{displayLabel(panel.label)}</span>
-                  <span class="text-xs text-gray-500">Qty {panel.quantity}</span>
+                  <span class="text-xs text-gray-500">{$t('Qty {count}', { count: panel.quantity })}</span>
                 </div>
                 {#if dadoUri}
                   <img src={dadoUri} alt="Dado drawing" class="joinery-img" />
